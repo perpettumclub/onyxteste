@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Hexagon, ArrowRight, Lock, Mail, User } from 'lucide-react';
+import { supabase } from '../services/supabase';
 
 export const Register: React.FC = () => {
     const navigate = useNavigate();
@@ -9,16 +10,31 @@ export const Register: React.FC = () => {
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleRegister = (e: React.FormEvent) => {
+    const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
-        // Simulate API call
-        setTimeout(() => {
+        try {
+            const { error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        full_name: name,
+                        avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`
+                    }
+                }
+            });
+
+            if (error) throw error;
+
+            alert('Conta criada com sucesso! Verifique seu email ou faça login.');
+            navigate('/login');
+        } catch (error: any) {
+            alert(error.message || 'Erro ao criar conta');
+        } finally {
             setIsLoading(false);
-            localStorage.setItem('isAuthenticated', 'true');
-            navigate('/select-client');
-        }, 1500);
+        }
     };
 
     return (

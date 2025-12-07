@@ -7,18 +7,32 @@ import { MemberArea } from './components/MemberArea';
 import { LeadsList } from './components/LeadsList';
 import { Billing } from './components/Billing';
 import { SalesDashboard } from './components/SalesDashboard';
+import { Settings } from './components/Settings';
+import { Affiliate } from './components/Affiliate';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { ClientSelect } from './components/ClientSelect';
 import { Task, ViewState, Lead, Post, FinancialGoal, Module, User, SalesMetrics, Transaction } from './types';
-import { MOCK_TASKS, MOCK_MODULES, MOCK_LEADS, MOCK_POSTS, CURRENT_USER, MOCK_SALES_METRICS, MOCK_TRANSACTIONS } from './constants';
+import { MOCK_TASKS, MOCK_MODULES, MOCK_LEADS, MOCK_POSTS, MOCK_SALES_METRICS, MOCK_TRANSACTIONS } from './constants';
+import TeleConsole from './components/TeleConsole';
+
+import { useDashboardData } from './hooks/useDashboardData';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
-  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+  const { session, loading } = useAuth();
   const location = useLocation();
 
-  if (!isAuthenticated) {
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!session) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
@@ -26,81 +40,105 @@ const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
 };
 
 const DashboardLayout: React.FC = () => {
+  const { user } = useAuth();
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.DASHBOARD);
-  const [user, setUser] = useState<User>(CURRENT_USER);
+
+  // Get selected tenant from localStorage (set by ClientSelect)
+  const tenantId = localStorage.getItem('selectedClientId');
+
+  // Fetch real data
+  const {
+    tasks: realTasks,
+    leads: realLeads,
+    modules: realModules,
+    posts: realPosts,
+    transactions: realTransactions,
+    salesMetrics: realSalesMetrics,
+    financialGoal: realFinancialGoal,
+    loading: isLoadingData,
+    refetch
+  } = useDashboardData(tenantId);
+
   const [tasks, setTasks] = useState<Task[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [modules, setModules] = useState<Module[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [salesMetrics, setSalesMetrics] = useState<SalesMetrics>(MOCK_SALES_METRICS);
   const [financialGoal, setFinancialGoal] = useState<FinancialGoal>({
-    current: 24500,
+    current: 0,
     target: 100000,
     startDate: '2023-11-01'
   });
-  const [salesMetrics, setSalesMetrics] = useState<SalesMetrics>(MOCK_SALES_METRICS);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   useEffect(() => {
-    setTasks(MOCK_TASKS);
-    setLeads(MOCK_LEADS);
-    setPosts(MOCK_POSTS);
-    setModules(MOCK_MODULES);
-    setSalesMetrics(MOCK_SALES_METRICS);
-    setTransactions(MOCK_TRANSACTIONS);
-  }, []);
+    // If we have real data, use it. Otherwise fall back to mocks (or empty)
+    if (tenantId) {
+      setTasks(realTasks);
+      setLeads(realLeads);
+      setModules(realModules);
+      setPosts(realPosts);
+      setTransactions(realTransactions);
+      setSalesMetrics(realSalesMetrics);
+      setFinancialGoal(realFinancialGoal);
+    } else {
+      // Fallback to mocks if no tenant selected (shouldn't happen due to ProtectedRoute logic but safe to keep)
+      setTasks(MOCK_TASKS);
+      setLeads(MOCK_LEADS);
+      setPosts(MOCK_POSTS);
+      setModules(MOCK_MODULES);
+      setSalesMetrics(MOCK_SALES_METRICS);
+      setTransactions(MOCK_TRANSACTIONS);
+    }
+  }, [realTasks, realLeads, realModules, realPosts, realTransactions, realSalesMetrics, realFinancialGoal, tenantId]);
 
   const renderContent = () => {
     switch (currentView) {
       case ViewState.DASHBOARD:
         return <Dashboard user={user} tasks={tasks} posts={posts} setPosts={setPosts} setView={setCurrentView} />;
       case ViewState.SALES:
-        return <SalesDashboard financialGoal={financialGoal} setFinancialGoal={setFinancialGoal} salesMetrics={salesMetrics} setSalesMetrics={setSalesMetrics} transactions={transactions} />;
+        return <SalesDashboard financialGoal={financialGoal} setFinancialGoal={setFinancialGoal} salesMetrics={salesMetrics} setSalesMetrics={setSalesMetrics} transactions={transactions} tenantId={tenantId} />;
       case ViewState.KANBAN:
         return <KanbanBoard tasks={tasks} setTasks={setTasks} />;
       case ViewState.LEADS:
-        return <LeadsList leads={leads} setLeads={setLeads} />;
+        return <LeadsList leads={leads} setLeads={setLeads} tenantId={tenantId} />;
       case ViewState.MEMBER_AREA:
-        return <MemberArea modules={modules} setModules={setModules} userRole={user.role} />;
+        return <MemberArea modules={modules} setModules={setModules} userRole={user.role} tenantId={tenantId} onRefresh={refetch} />;
       case ViewState.BILLING:
-        return <Billing />;
+        return <Billing tenantId={tenantId} />;
       case ViewState.SETTINGS:
-        return (
-          <div className="flex flex-col items-center justify-center h-[50vh] text-onyx-500 animate-fade-in-up">
-            <div className="p-8 border border-onyx-800 rounded-3xl bg-onyx-950 text-center shadow-2xl max-w-lg w-full">
-              <h2 className="text-xl font-bold text-white mb-6">Configurações de Admin</h2>
-              <div className="text-left space-y-4">
-                <label className="block text-sm font-bold text-white">Simular Nível de Acesso</label>
-                <select
-                  value={user.role}
-                  onChange={(e) => setUser({ ...user, role: e.target.value as any })}
-                  className="w-full bg-black border border-onyx-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white"
-                >
-                  <option value="USER">Usuário (Membro)</option>
-                  <option value="ADMIN">Administrador</option>
-                  <option value="SUPER_ADMIN">Super Admin</option>
-                </select>
-                <p className="text-xs text-onyx-500">Alterne entre os níveis para testar as permissões.</p>
-              </div>
-            </div>
-          </div>
-        );
+        return <Settings user={user} tenantId={tenantId || undefined} />;
+      case ViewState.AFFILIATE:
+        return <Affiliate tenantId={tenantId} />;
       default:
         return <Dashboard user={user} tasks={tasks} posts={posts} setPosts={setPosts} setView={setCurrentView} />;
     }
   };
 
+  const handleTenantChange = (newTenantId: string) => {
+    localStorage.setItem('selectedClientId', newTenantId);
+    window.location.reload(); // Reload to refetch all data for new tenant
+  };
+
   return (
-    <Layout currentView={currentView} setView={setCurrentView} user={user}>
+    <Layout
+      currentView={currentView}
+      setView={setCurrentView}
+      user={user}
+      selectedTenantId={tenantId}
+      onTenantChange={handleTenantChange}
+    >
       {renderContent()}
     </Layout>
   );
 };
 
-const App: React.FC = () => {
+const AppRoutes: React.FC = () => {
+  const { session } = useAuth();
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route path="/login" element={!session ? <Login /> : <Navigate to="/select-client" replace />} />
+      <Route path="/register" element={!session ? <Register /> : <Navigate to="/select-client" replace />} />
       <Route
         path="/select-client"
         element={
@@ -119,6 +157,15 @@ const App: React.FC = () => {
       />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
     </Routes>
+  );
+}
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppRoutes />
+      <TeleConsole />
+    </AuthProvider>
   );
 };
 

@@ -1,9 +1,57 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Invoice } from '../types';
 import { MOCK_INVOICES } from '../constants';
-import { CreditCard, Download, CheckCircle, ShieldCheck, Zap } from 'lucide-react';
+import { CreditCard, Download, CheckCircle, ShieldCheck, Zap, AlertTriangle } from 'lucide-react';
+import { useSubscription } from '../hooks/useSubscription';
+import { SubscriptionModal } from './SubscriptionModal';
 
-export const Billing: React.FC = () => {
+interface BillingProps {
+   tenantId: string | null;
+}
+
+export const Billing: React.FC<BillingProps> = ({ tenantId }) => {
+   const { subscription, loading, updatePlan, cancelSubscription } = useSubscription(tenantId);
+   const [isModalOpen, setIsModalOpen] = useState(false);
+
+   const handleUpdatePlan = async (planId: string) => {
+      await updatePlan(planId);
+      setIsModalOpen(false);
+   };
+
+   const handleCancelSubscription = async () => {
+      await cancelSubscription();
+      setIsModalOpen(false);
+   };
+
+   const getPlanName = (id: string) => {
+      switch (id) {
+         case 'starter': return 'Onyx Starter';
+         case 'pro': return 'Onyx Pro';
+         case 'business': return 'Onyx Business';
+         default: return 'Onyx Pro';
+      }
+   };
+
+   const getPlanPrice = (id: string) => {
+      switch (id) {
+         case 'starter': return 'R$ 99';
+         case 'pro': return 'R$ 299';
+         case 'business': return 'R$ 599';
+         default: return 'R$ 299';
+      }
+   };
+
+   const getLeadLimit = (id: string) => {
+      switch (id) {
+         case 'starter': return '1.000';
+         case 'pro': return '5.000';
+         case 'business': return 'Ilimitado';
+         default: return '5.000';
+      }
+   };
+
+   if (loading) return <div className="p-8 text-center text-onyx-500">Carregando informações da assinatura...</div>;
+
    return (
       <div className="space-y-8 pb-16 animate-fade-in-up">
          {/* Header */}
@@ -26,20 +74,28 @@ export const Billing: React.FC = () => {
                   <div>
                      <div className="flex items-center gap-2 mb-2">
                         <span className="bg-white text-black text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Plano Atual</span>
-                        <span className="text-green-500 text-xs font-bold flex items-center gap-1"><CheckCircle size={12} /> Ativo</span>
+                        {subscription?.cancel_at_period_end ? (
+                           <span className="text-yellow-500 text-xs font-bold flex items-center gap-1"><AlertTriangle size={12} /> Cancela em breve</span>
+                        ) : (
+                           <span className="text-green-500 text-xs font-bold flex items-center gap-1"><CheckCircle size={12} /> Ativo</span>
+                        )}
                      </div>
-                     <h2 className="text-3xl font-bold text-white mb-1">Onyx Pro</h2>
-                     <p className="text-onyx-400 text-sm">Faturado anualmente • Próxima cobrança em 01 Nov 2024</p>
+                     <h2 className="text-3xl font-bold text-white mb-1">{getPlanName(subscription?.plan_id || 'pro')}</h2>
+                     <p className="text-onyx-400 text-sm">
+                        {subscription?.cancel_at_period_end
+                           ? 'Acesso disponível até o final do ciclo atual.'
+                           : 'Faturado anualmente • Próxima cobrança em 01 Nov 2024'}
+                     </p>
                   </div>
                   <div className="text-right">
-                     <div className="text-2xl font-bold text-white">R$ 299<span className="text-sm text-onyx-500 font-normal">/mês</span></div>
+                     <div className="text-2xl font-bold text-white">{getPlanPrice(subscription?.plan_id || 'pro')}<span className="text-sm text-onyx-500 font-normal">/mês</span></div>
                   </div>
                </div>
 
                <div className="mt-8 pt-8 border-t border-onyx-800/50 relative z-10">
                   <div className="flex justify-between text-xs font-bold text-onyx-400 mb-2 uppercase tracking-wide">
                      <span>Uso de Leads</span>
-                     <span>1.240 / 5.000</span>
+                     <span>1.240 / {getLeadLimit(subscription?.plan_id || 'pro')}</span>
                   </div>
                   <div className="w-full bg-onyx-950 h-2 rounded-full overflow-hidden border border-onyx-900">
                      <div className="bg-white h-full w-[25%] rounded-full shadow-[0_0_10px_rgba(255,255,255,0.5)]"></div>
@@ -47,12 +103,14 @@ export const Billing: React.FC = () => {
                </div>
 
                <div className="mt-6 flex gap-3 relative z-10">
-                  <button className="bg-white text-black px-5 py-2.5 rounded-full text-sm font-bold hover:bg-onyx-200 transition-colors">
+                  <button onClick={() => setIsModalOpen(true)} className="bg-white text-black px-5 py-2.5 rounded-full text-sm font-bold hover:bg-onyx-200 transition-colors">
                      Alterar Plano
                   </button>
-                  <button className="bg-transparent border border-onyx-700 text-white px-5 py-2.5 rounded-full text-sm font-bold hover:bg-onyx-900 transition-colors">
-                     Cancelar Assinatura
-                  </button>
+                  {!subscription?.cancel_at_period_end && (
+                     <button onClick={() => setIsModalOpen(true)} className="bg-transparent border border-onyx-700 text-white px-5 py-2.5 rounded-full text-sm font-bold hover:bg-onyx-900 transition-colors">
+                        Cancelar Assinatura
+                     </button>
+                  )}
                </div>
             </div>
 
@@ -119,6 +177,14 @@ export const Billing: React.FC = () => {
                </table>
             </div>
          </div>
+
+         <SubscriptionModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            currentPlan={subscription?.plan_id || 'pro'}
+            onUpdatePlan={handleUpdatePlan}
+            onCancelSubscription={handleCancelSubscription}
+         />
       </div>
    );
 };

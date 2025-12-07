@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Hexagon, ArrowRight, Lock, Mail } from 'lucide-react';
+import { supabase } from '../services/supabase';
 
 export const Login: React.FC = () => {
     const navigate = useNavigate();
@@ -8,17 +9,23 @@ export const Login: React.FC = () => {
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
-        // Simulate API call
-        setTimeout(() => {
-            setIsLoading(false);
-            // In a real app, you would save the token here
-            localStorage.setItem('isAuthenticated', 'true');
+        try {
+            const { error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+
+            if (error) throw error;
             navigate('/select-client');
-        }, 1500);
+        } catch (error: any) {
+            alert(error.message || 'Erro ao fazer login');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
