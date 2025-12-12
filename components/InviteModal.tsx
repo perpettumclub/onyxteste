@@ -43,7 +43,13 @@ export const InviteModal: React.FC<InviteModalProps> = ({ isOpen, onClose, tenan
 
             if (insertError) {
                 console.error('Error creating invite:', insertError);
-                setError('Erro ao criar convite. Tente novamente.');
+                if (insertError.code === '42P01' || insertError.message?.includes('relation') || insertError.message?.includes('does not exist')) {
+                    setError('Tabela de convites não encontrada. Execute o SQL de migração no Supabase.');
+                } else if (insertError.code === '42501') {
+                    setError('Sem permissão para criar convites. Verifique as políticas RLS.');
+                } else {
+                    setError(`Erro ao criar convite: ${insertError.message || 'Tente novamente.'}`);
+                }
                 return;
             }
 
