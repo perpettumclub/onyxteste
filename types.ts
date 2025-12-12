@@ -152,9 +152,9 @@ export interface CommunityPost {
   id: string;
   tenant_id: string;
   author_id: string;
-  title: string;
+  title?: string;
   content: string;
-  category: string;
+  category?: string;
   created_at: string;
   author?: {
     full_name: string;

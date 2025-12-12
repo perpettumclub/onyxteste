@@ -21,16 +21,44 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ tenantId }) => {
     const fetchPosts = async () => {
         console.log('Fetching community posts for tenant:', tenantId);
         try {
-            const { data, error } = await supabase
+            // Fetch posts first
+            const { data: postsData, error: postsError } = await supabase
                 .from('posts')
-                .select('*, author:author_id(full_name, avatar_url, role)')
-                .eq('tenant_id', tenantId) // Ensure RLS allows this
+                .select('id, tenant_id, author_id, content, created_at')
+                .eq('tenant_id', tenantId)
                 .order('created_at', { ascending: false });
 
-            console.log('Supabase response:', { data, error });
+            if (postsError) throw postsError;
+            if (!postsData || postsData.length === 0) {
+                setPosts([]);
+                return;
+            }
 
-            if (error) throw error;
-            setPosts(data || []);
+            // Get unique author IDs
+            const authorIds = [...new Set(postsData.map(p => p.author_id))];
+
+            // Fetch profiles for all authors
+            const { data: profilesData, error: profilesError } = await supabase
+                .from('profiles')
+                .select('id, full_name, avatar_url, role')
+                .in('id', authorIds);
+
+            if (profilesError) {
+                console.error('Error fetching profiles:', profilesError);
+            }
+
+            // Create a map of profiles by ID
+            const profilesMap = new Map();
+            (profilesData || []).forEach(p => profilesMap.set(p.id, p));
+
+            // Merge posts with author info
+            const postsWithAuthors = postsData.map(post => ({
+                ...post,
+                author: profilesMap.get(post.author_id) || null
+            }));
+
+            console.log('Posts with authors:', postsWithAuthors);
+            setPosts(postsWithAuthors);
         } catch (error) {
             console.error('Error fetching posts:', error);
         } finally {
