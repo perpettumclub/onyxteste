@@ -135,11 +135,11 @@ export const PostCreator: React.FC<PostCreatorProps> = ({ onPostCreated, tenantI
                 className="hidden"
             />
 
-            <div className="w-11 h-11 rounded-xl bg-flux-subtle border border-flux-border flex-shrink-0 flex items-center justify-center font-bold text-white text-sm overflow-hidden">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-onyx-700 to-onyx-800 border border-white/[0.06] flex-shrink-0 flex items-center justify-center font-bold text-white text-sm overflow-hidden shadow-premium">
                 {user.avatar ? (
                     <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
-                    user.name?.charAt(0) || 'U'
+                    user.name?.charAt(0)?.toUpperCase() || 'U'
                 )}
             </div>
             <div className="flex-1">

@@ -54,6 +54,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 .single();
 
             if (profile) {
+                console.log('Profile data fetched:', profile);
+                console.log('Avatar URL:', profile.avatar_url);
                 setUser({
                     ...CURRENT_USER,
                     id: sessionUser.id,
