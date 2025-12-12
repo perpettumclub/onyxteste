@@ -42,6 +42,10 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ tenantId }) => {
         setPosts([newPost, ...posts]);
     };
 
+    const handlePostDeleted = (postId: string) => {
+        setPosts(posts.filter(p => p.id !== postId));
+    };
+
     if (loading) {
         return (
             <div className="flex justify-center items-center py-12">
@@ -63,7 +67,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ tenantId }) => {
                     </div>
                 ) : (
                     posts.map(post => (
-                        <PostCard key={post.id} post={post} />
+                        <PostCard key={post.id} post={post} onPostDeleted={handlePostDeleted} />
                     ))
                 )}
             </div>
