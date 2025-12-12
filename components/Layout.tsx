@@ -404,7 +404,11 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children, 
                 </div>
                 <div className="border-t border-flux-border p-1.5">
                   <button
-                    onClick={() => { /* logout logic */ }}
+                    onClick={async () => {
+                      await supabase.auth.signOut();
+                      localStorage.removeItem('selectedClientId');
+                      window.location.href = '/login';
+                    }}
                     className="w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-3 text-flux-text-tertiary hover:bg-white/[0.03] hover:text-white transition-colors"
                   >
                     <LogOut size={16} />
