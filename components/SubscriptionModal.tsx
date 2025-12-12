@@ -22,7 +22,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
     ];
 
     return (
-        <div className="fixed inset-0 lg:left-72 z-50 flex items-start justify-center pt-20 px-4 pb-4">
+        <div className="fixed inset-0 lg:left-72 z-50 flex items-start justify-center pt-4 px-4 pb-4">
             <div className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" onClick={onClose}></div>
             <div className="relative premium-card w-full max-w-3xl p-0 shadow-2xl animate-scale-in rounded-3xl overflow-hidden flex flex-col max-h-[85vh]">
 

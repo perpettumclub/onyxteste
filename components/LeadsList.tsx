@@ -251,7 +251,7 @@ export const LeadsList: React.FC<LeadsListProps> = ({ leads, setLeads, tenantId 
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 pb-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-4 px-4 pb-4">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" onClick={() => setIsModalOpen(false)}></div>
           <div className="relative premium-card w-full max-w-md p-0 shadow-2xl animate-scale-in rounded-3xl overflow-hidden flex flex-col max-h-[85vh]">
             <div className="p-6 border-b border-white/[0.04] bg-white/[0.02] flex justify-between items-center">
