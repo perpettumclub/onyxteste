@@ -331,9 +331,9 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ financialGoal, s
 
             {/* Edit Financial Goal Modal */}
             {isEditingGoal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" onClick={() => setIsEditingGoal(false)}></div>
-                    <div className="relative premium-card w-full max-w-md p-0 shadow-2xl animate-scale-in rounded-3xl overflow-hidden flex flex-col">
+                <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 p-4 overflow-y-auto">
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity" onClick={() => setIsEditingGoal(false)}></div>
+                    <div className="relative premium-card w-full max-w-md p-0 shadow-2xl animate-scale-in rounded-3xl overflow-hidden flex flex-col max-h-[80vh]">
                         <div className="p-6 border-b border-white/[0.04] bg-white/[0.02] flex justify-between items-center">
                             <h2 className="text-xl font-bold text-white tracking-tight">Editar Valores</h2>
                             <button onClick={() => setIsEditingGoal(false)} className="text-onyx-500 hover:text-white transition-colors"><X size={20} /></button>
@@ -404,9 +404,9 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ financialGoal, s
 
             {/* Edit Taxes Modal */}
             {isEditingTaxes && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" onClick={() => setIsEditingTaxes(false)}></div>
-                    <div className="relative premium-card w-full max-w-md p-0 shadow-2xl animate-scale-in rounded-3xl overflow-hidden flex flex-col max-h-[85vh]">
+                <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 p-4 overflow-y-auto">
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity" onClick={() => setIsEditingTaxes(false)}></div>
+                    <div className="relative premium-card w-full max-w-md p-0 shadow-2xl animate-scale-in rounded-3xl overflow-hidden flex flex-col max-h-[80vh]">
                         <div className="p-6 border-b border-white/[0.04] bg-white/[0.02] flex justify-between items-center">
                             <h2 className="text-xl font-bold text-white tracking-tight">Editar Taxas & Deduções</h2>
                             <button onClick={() => setIsEditingTaxes(false)} className="text-onyx-500 hover:text-white transition-colors"><X size={20} /></button>
