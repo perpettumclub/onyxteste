@@ -436,8 +436,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
               </button>
               {isGroupDropdownOpen && (
                 <>
-                  <div className="fixed inset-0 z-10" onClick={() => setIsGroupDropdownOpen(false)}></div>
-                  <div className="absolute top-full left-0 mt-1 w-48 premium-card rounded-lg shadow-premium-xl z-[100] py-1 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="fixed inset-0 z-[99]" onClick={() => setIsGroupDropdownOpen(false)}></div>
+                  <div className="absolute top-full left-0 mt-2 w-48 premium-card rounded-lg shadow-premium-xl z-[100] py-1 animate-in fade-in zoom-in-95 duration-150">
                     {[
                       { value: 'status', label: 'Status', icon: LayoutGrid },
                       { value: 'assignee', label: 'Responsável', icon: Users },
@@ -471,8 +471,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
               </button>
               {isColumnsDropdownOpen && (
                 <>
-                  <div className="fixed inset-0 z-10" onClick={() => setIsColumnsDropdownOpen(false)}></div>
-                  <div className="absolute top-full left-0 mt-1 w-48 premium-card rounded-lg shadow-premium-xl z-[100] py-2 px-3 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="fixed inset-0 z-[99]" onClick={() => setIsColumnsDropdownOpen(false)}></div>
+                  <div className="absolute top-full left-0 mt-2 w-48 premium-card rounded-lg shadow-premium-xl z-[100] py-2 px-3 animate-in fade-in zoom-in-95 duration-150">
                     <p className="text-[10px] text-onyx-500 uppercase tracking-wider mb-2 font-bold">Colunas Visíveis</p>
                     {columns.map(col => (
                       <label key={col.id} className="flex items-center gap-2 py-1.5 cursor-pointer">
@@ -503,8 +503,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
               </button>
               {isFilterOpen && (
                 <>
-                  <div className="fixed inset-0 z-10" onClick={() => setIsFilterOpen(false)}></div>
-                  <div className="absolute top-full right-0 mt-1 w-72 premium-card rounded-xl shadow-premium-xl z-[100] p-4 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="fixed inset-0 z-[99]" onClick={() => setIsFilterOpen(false)}></div>
+                  <div className="absolute top-full right-0 mt-2 w-72 premium-card rounded-xl shadow-premium-xl z-[100] p-4 space-y-4 animate-in fade-in zoom-in-95 duration-150">
                     <div>
                       <label className="block text-[10px] font-bold text-onyx-500 uppercase mb-2 tracking-wider">Etiqueta</label>
                       <select
@@ -566,8 +566,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
               </button>
               {isAssigneeDropdownOpen && (
                 <>
-                  <div className="fixed inset-0 z-10" onClick={() => setIsAssigneeDropdownOpen(false)}></div>
-                  <div className="absolute top-full right-0 mt-1 w-48 premium-card rounded-lg shadow-premium-xl z-[100] py-1 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="fixed inset-0 z-[99]" onClick={() => setIsAssigneeDropdownOpen(false)}></div>
+                  <div className="absolute top-full right-0 mt-2 w-48 premium-card rounded-lg shadow-premium-xl z-[100] py-1 animate-in fade-in zoom-in-95 duration-150">
                     <button
                       onClick={() => { setFilterAssignee(''); setIsAssigneeDropdownOpen(false); }}
                       className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium transition-colors ${!filterAssignee ? 'bg-white/[0.1] text-white' : 'text-onyx-400 hover:text-white hover:bg-white/[0.05]'}`}
