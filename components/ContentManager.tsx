@@ -249,7 +249,7 @@ export const ContentManager: React.FC<ContentManagerProps> = ({ isOpen, onClose,
     const currentLessons = modules.find(m => m.id === selectedModuleId)?.lessons || [];
 
     return (
-        <div className="fixed inset-0 lg:left-72 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 lg:left-72 z-50 flex items-start justify-center pt-20 px-4 pb-4">
             <div className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" onClick={onClose}></div>
             <div className="relative premium-card w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl animate-scale-in overflow-hidden rounded-3xl">
 

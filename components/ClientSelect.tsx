@@ -195,7 +195,7 @@ export const ClientSelect: React.FC = () => {
 
             {/* Create Client Modal */}
             {isCreating && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 pb-4">
                     <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsCreating(false)}></div>
                     <div className="relative bg-[#0a0a0a] border border-onyx-800 rounded-3xl w-full max-w-md p-8 shadow-2xl animate-scale-in">
                         <h2 className="text-2xl font-bold text-white mb-6">Nova Área de Membros</h2>

@@ -358,7 +358,7 @@ export const MemberArea: React.FC<MemberAreaProps> = ({ modules, setModules, use
                {/* Edit Module Modal */}
                {
                   editingModule && (
-                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 pb-4">
                         <div className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" onClick={() => setEditingModule(null)}></div>
                         <div className="relative premium-card w-full max-w-lg p-0 shadow-2xl animate-scale-in rounded-3xl overflow-hidden flex flex-col max-h-[85vh]">
                            <div className="p-6 border-b border-white/[0.04] bg-white/[0.02] flex justify-between items-center">
@@ -402,7 +402,7 @@ export const MemberArea: React.FC<MemberAreaProps> = ({ modules, setModules, use
                {/* Delete Module Confirmation Modal */}
                {
                   deletingModule && (
-                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 pb-4">
                         <div className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" onClick={() => setDeletingModule(null)}></div>
                         <div className="relative premium-card w-full max-w-md p-6 shadow-2xl animate-scale-in rounded-3xl">
                            <div className="flex justify-between items-center mb-6">

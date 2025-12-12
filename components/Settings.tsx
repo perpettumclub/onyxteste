@@ -218,7 +218,7 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId, initialTab }
 
             {/* Generated Key Modal */}
             {generatedKey && (
-                <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 bg-black/80 z-50 flex items-start justify-center pt-20 px-4 pb-4">
                     {/* ... modal content ... */}
                 </div>
             )}

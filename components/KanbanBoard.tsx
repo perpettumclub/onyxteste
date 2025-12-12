@@ -1681,7 +1681,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
       {/* Task Modal */}
       {
         isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 sm:px-6 pb-4 sm:pb-6">
             <div className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" onClick={() => setIsModalOpen(false)}></div>
             <div className="relative premium-card w-full max-w-2xl shadow-2xl animate-scale-in flex flex-col max-h-[85vh] rounded-3xl overflow-hidden">
 
