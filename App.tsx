@@ -8,7 +8,6 @@ import { LeadsList } from './components/LeadsList';
 import { Billing } from './components/Billing';
 import { SalesDashboard } from './components/SalesDashboard';
 import { Settings } from './components/Settings';
-import { Affiliate } from './components/Affiliate';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { ForgotPassword } from './components/ForgotPassword';
@@ -111,8 +110,6 @@ const DashboardLayout: React.FC = () => {
         return <Billing tenantId={tenantId} />;
       case ViewState.SETTINGS:
         return <Settings user={user} tenantId={tenantId || undefined} />;
-      case ViewState.AFFILIATE:
-        return <Affiliate tenantId={tenantId} />;
       default:
         return <Dashboard user={user} tasks={tasks} posts={posts} setPosts={setPosts} setView={setCurrentView} />;
     }

@@ -10,9 +10,10 @@ interface SettingsProps {
         avatar?: string;
     };
     tenantId?: string;
+    initialTab?: SettingsTab;
 }
 
-type SettingsTab = 'profile' | 'team' | 'integrations' | 'notifications' | 'customization';
+type SettingsTab = 'profile' | 'team' | 'affiliates' | 'integrations' | 'notifications' | 'customization';
 
 const INTEGRATION_META: Record<string, { name: string; icon: string; desc: string }> = {
     stripe: { name: 'Stripe', icon: '💳', desc: 'Pagamentos' },
@@ -21,8 +22,8 @@ const INTEGRATION_META: Record<string, { name: string; icon: string; desc: strin
     zapier: { name: 'Zapier', icon: '⚡', desc: 'Automações' },
 };
 
-export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
-    const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+export const Settings: React.FC<SettingsProps> = ({ user, tenantId, initialTab }) => {
+    const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab || 'profile');
     const [isSaving, setIsSaving] = useState(false);
     const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
@@ -74,6 +75,7 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
     const tabs = [
         { id: 'profile' as SettingsTab, label: 'Perfil', icon: User },
         { id: 'team' as SettingsTab, label: 'Equipe', icon: Users },
+        { id: 'affiliates' as SettingsTab, label: 'Afiliados', icon: Link2 },
         { id: 'integrations' as SettingsTab, label: 'Integrações', icon: Webhook },
         { id: 'notifications' as SettingsTab, label: 'Notificações', icon: Bell },
         { id: 'customization' as SettingsTab, label: 'Personalização', icon: Palette },
@@ -440,6 +442,131 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
                                         <p className="text-onyx-600 text-sm mt-1">Use o formulário acima para convidar pessoas</p>
                                     </div>
                                 )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Affiliates Tab */}
+                    {activeTab === 'affiliates' && (
+                        <div className="space-y-8 animate-fade-in">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h2 className="text-xl font-semibold text-white mb-1">Afiliados</h2>
+                                    <p className="text-onyx-500 text-sm">Ganhe comissão vitalícia quando alguém criar ou entrar em uma comunidade através do seu link.</p>
+                                </div>
+                            </div>
+
+                            {/* Stats Cards - Inspired by Skool */}
+                            <div className="grid grid-cols-4 gap-4">
+                                <div className="stat-card rounded-2xl p-5 text-center">
+                                    <p className="text-3xl font-semibold text-white number-display mb-1">R$ 0</p>
+                                    <p className="text-onyx-500 text-[11px] uppercase font-semibold tracking-wider">Últimos 30 dias</p>
+                                </div>
+                                <div className="stat-card rounded-2xl p-5 text-center">
+                                    <p className="text-3xl font-semibold text-white number-display mb-1">R$ 0</p>
+                                    <p className="text-onyx-500 text-[11px] uppercase font-semibold tracking-wider">Vitalício</p>
+                                </div>
+                                <div className="stat-card rounded-2xl p-5 text-center">
+                                    <p className="text-3xl font-semibold text-onyx-400 number-display mb-1">R$ 0</p>
+                                    <p className="text-onyx-500 text-[11px] uppercase font-semibold tracking-wider">Saldo disponível</p>
+                                </div>
+                                <div className="stat-card rounded-2xl p-5 flex items-center justify-center">
+                                    <button className="premium-btn-ghost px-6 py-3 rounded-xl text-white font-semibold text-sm border border-white/10 hover:bg-white/5 transition-all">
+                                        SACAR
+                                    </button>
+                                </div>
+                            </div>
+
+                            <p className="text-right text-onyx-600 text-xs">R$ 0 disponível em breve</p>
+
+                            {/* Affiliate Links Section */}
+                            <div className="space-y-4">
+                                <h3 className="text-white font-medium">Seus links de afiliado</h3>
+
+                                {/* Product Tabs */}
+                                <div className="flex gap-2">
+                                    {affiliateLinks.length === 0 ? (
+                                        <button className="px-4 py-2 rounded-lg bg-onyx-700 text-white text-sm font-medium">
+                                            Plataforma Onyx
+                                        </button>
+                                    ) : (
+                                        affiliateLinks.map((link, index) => (
+                                            <button
+                                                key={link.id}
+                                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${index === 0 ? 'bg-onyx-700 text-white' : 'bg-white/[0.03] text-onyx-400 hover:bg-white/[0.05] hover:text-white'}`}
+                                            >
+                                                {link.name}
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+
+                                {/* Commission Info */}
+                                <p className="text-onyx-400 text-sm">
+                                    Ganhe <span className="text-onyx-300 font-semibold">40% de comissão</span> quando alguém criar ou entrar em uma comunidade Onyx através do seu link.
+                                </p>
+
+                                {/* Affiliate Link Copy */}
+                                <div className="flex items-center gap-3">
+                                    <div className="flex-1 premium-input rounded-xl px-4 py-3.5 text-onyx-300 font-mono text-sm">
+                                        https://onyxclub.io/r/{affiliateLinks[0]?.code || 'seu-codigo'}
+                                    </div>
+                                    <button
+                                        onClick={() => copyToClipboard(`https://onyxclub.io/r/${affiliateLinks[0]?.code || 'seu-codigo'}`, 'affiliate-link')}
+                                        className="premium-btn px-6 py-3.5 rounded-xl font-semibold text-sm text-black"
+                                    >
+                                        {copied === 'affiliate-link' ? 'COPIADO!' : 'COPIAR'}
+                                    </button>
+                                </div>
+
+                                {/* Status Badge */}
+                                <div className="flex justify-end">
+                                    <span className="text-onyx-500 text-sm flex items-center gap-1.5">
+                                        Ativo <ChevronRight size={14} className="rotate-90" />
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Create New Link */}
+                            <div className="premium-divider" />
+
+                            <div className="premium-card rounded-2xl p-5">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                                        <Link2 size={14} className="text-onyx-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-white font-medium text-sm">Criar Novo Link</h3>
+                                        <p className="text-onyx-500 text-xs">Gere um link de afiliado para um produto específico</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <input
+                                        type="text"
+                                        value={newLinkName}
+                                        onChange={e => setNewLinkName(e.target.value)}
+                                        placeholder="Nome do produto (ex: Curso Premium)"
+                                        className="flex-1 premium-input rounded-xl px-4 py-3 text-white text-sm"
+                                    />
+                                    <div className="flex items-center gap-2 premium-input rounded-xl px-4">
+                                        <input
+                                            type="number"
+                                            value={newLinkCommission}
+                                            onChange={e => setNewLinkCommission(Number(e.target.value))}
+                                            className="w-12 bg-transparent text-white text-sm focus:outline-none text-center"
+                                            min={1}
+                                            max={100}
+                                        />
+                                        <span className="text-onyx-500 text-sm">%</span>
+                                    </div>
+                                    <button
+                                        onClick={handleCreateAffiliateLink}
+                                        disabled={isSaving || !newLinkName}
+                                        className="premium-btn flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm text-black disabled:opacity-50"
+                                    >
+                                        <Plus size={14} /> Criar
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )}
