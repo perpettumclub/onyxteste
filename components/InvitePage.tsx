@@ -47,6 +47,13 @@ export const InvitePage: React.FC = () => {
                     return;
                 }
 
+                // Check if tenant data is available
+                if (!data.tenant) {
+                    setError('Área de membros não encontrada.');
+                    setIsLoading(false);
+                    return;
+                }
+
                 // Check if expired
                 if (new Date(data.expires_at) < new Date()) {
                     setError('Este convite expirou.');
@@ -181,7 +188,7 @@ export const InvitePage: React.FC = () => {
                     <CheckCircle className="w-8 h-8 text-emerald-400" />
                 </div>
                 <h1 className="text-2xl font-bold text-white mb-2">Convite Aceito!</h1>
-                <p className="text-flux-text-secondary">Redirecionando para {invite?.tenant.name}...</p>
+                <p className="text-flux-text-secondary">Redirecionando para {invite?.tenant?.name || 'a área de membros'}...</p>
             </div>
         );
     }
@@ -211,7 +218,7 @@ export const InvitePage: React.FC = () => {
                             <Users className="w-7 h-7 text-white" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-white">{invite?.tenant.name}</h2>
+                            <h2 className="text-xl font-bold text-white">{invite?.tenant?.name || 'Área de Membros'}</h2>
                             <p className="text-sm text-flux-text-tertiary">Área de Membros</p>
                         </div>
                     </div>
