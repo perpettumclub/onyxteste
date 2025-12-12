@@ -257,8 +257,12 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId, initialTab }
                             {/* Avatar */}
                             <div className="flex items-center gap-6">
                                 <div className="relative group">
-                                    <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-onyx-700 to-onyx-800 border border-white/[0.06] flex items-center justify-center text-3xl font-semibold text-white shadow-premium transition-all group-hover:shadow-premium-lg">
-                                        {profile.name ? profile.name.charAt(0).toUpperCase() : 'U'}
+                                    <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-onyx-700 to-onyx-800 border border-white/[0.06] flex items-center justify-center text-3xl font-semibold text-white shadow-premium transition-all group-hover:shadow-premium-lg overflow-hidden">
+                                        {profile.avatar ? (
+                                            <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                                        ) : (
+                                            profile.name ? profile.name.charAt(0).toUpperCase() : 'U'
+                                        )}
                                     </div>
                                     <button className="absolute -bottom-2 -right-2 p-2.5 premium-btn rounded-xl shadow-premium-lg transition-transform hover:scale-105">
                                         <Camera size={14} />

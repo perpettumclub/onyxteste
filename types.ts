@@ -148,6 +148,21 @@ export interface Post {
   avatar?: string;
 }
 
+export interface CommunityPost {
+  id: string;
+  tenant_id: string;
+  author_id: string;
+  title: string;
+  content: string;
+  category: string;
+  created_at: string;
+  author?: {
+    full_name: string;
+    avatar_url: string;
+    role: string;
+  };
+}
+
 export interface FinancialGoal {
   current: number;
   target: number;

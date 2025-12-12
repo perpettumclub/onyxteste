@@ -4,6 +4,7 @@ export const CURRENT_USER: User = {
   id: 'u-1',
   name: 'Carlos Expert',
   email: 'carlos@onyx.com',
+  avatar: '',
   role: 'SUPER_ADMIN',
   plan: 'Onyx Pro'
 };
@@ -78,7 +79,7 @@ export const MOCK_MODULES: Module[] = [
     id: 'm-1',
     title: 'Onboarding e Cultura',
     description: 'Comece por aqui para entender como nossa parceria funciona.',
-    image: 'linear-gradient(to bottom right, #262626, #404040)', 
+    image: 'linear-gradient(to bottom right, #262626, #404040)',
     lessons: [
       { id: 'l-1', title: 'Boas-vindas ao Ecossistema', duration: '5:20', type: 'VIDEO', isCompleted: true },
       { id: 'l-2', title: 'Como usar o Kanban', duration: '12:00', type: 'VIDEO', isCompleted: true },

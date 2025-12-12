@@ -97,7 +97,7 @@ const DashboardLayout: React.FC = () => {
   const renderContent = () => {
     switch (currentView) {
       case ViewState.DASHBOARD:
-        return <Dashboard user={user} tasks={tasks} posts={posts} setPosts={setPosts} setView={setCurrentView} />;
+        return <Dashboard user={user} tasks={tasks} posts={posts} setPosts={setPosts} setView={setCurrentView} tenantId={tenantId} />;
       case ViewState.SALES:
         return <SalesDashboard financialGoal={financialGoal} setFinancialGoal={setFinancialGoal} salesMetrics={salesMetrics} setSalesMetrics={setSalesMetrics} transactions={transactions} tenantId={tenantId} />;
       case ViewState.KANBAN:

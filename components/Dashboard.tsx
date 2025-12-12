@@ -16,6 +16,7 @@ import {
   TrendingUp,
   Calendar
 } from 'lucide-react';
+import { CommunityFeed } from './CommunityFeed';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface DashboardProps {
@@ -24,9 +25,10 @@ interface DashboardProps {
   posts: Post[];
   setPosts: React.Dispatch<React.SetStateAction<Post[]>>;
   setView: (view: any) => void;
+  tenantId: string | null;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ user, tasks, posts, setPosts, setView }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ user, tasks, posts, setPosts, setView, tenantId }) => {
   const [aiSummary, setAiSummary] = useState<string>("");
   const [loadingAi, setLoadingAi] = useState(false);
   const [newPostContent, setNewPostContent] = useState("");
@@ -168,78 +170,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, tasks, posts, setPos
             <button className="text-xs font-medium text-flux-text-tertiary hover:text-white transition-colors uppercase tracking-wide">Ver tudo</button>
           </div>
 
-          {/* Create Post */}
-          <div className="flux-card p-5 flex gap-5 items-start focus-within:ring-1 focus-within:ring-flux-border transition-all">
-            <div className="w-11 h-11 rounded-xl bg-flux-subtle border border-flux-border flex-shrink-0 flex items-center justify-center font-bold text-white text-sm">
-              {user.name.charAt(0)}
-            </div>
-            <div className="flex-1">
-              <textarea
-                value={newPostContent}
-                onChange={(e) => setNewPostContent(e.target.value)}
-                placeholder="Compartilhe algo com a comunidade..."
-                className="w-full bg-transparent text-sm text-white placeholder-flux-text-tertiary focus:outline-none resize-none min-h-[60px] font-medium"
-              />
-              <div className="flex justify-between items-center mt-3 border-t border-flux-border pt-4">
-                <div className="text-[10px] text-flux-text-tertiary font-bold uppercase tracking-wider">Postar como {user.role}</div>
-                <button
-                  onClick={handleCreatePost}
-                  disabled={!newPostContent.trim()}
-                  className="flux-btn-primary px-5 py-2 text-xs font-bold disabled:opacity-50 flex items-center gap-2"
-                >
-                  <Send size={12} /> Publicar
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Posts List */}
-          <div className="space-y-4">
-            {posts.map((post, index) => (
-              <div
-                key={post.id}
-                className="flux-card p-6 group animate-fade-in"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-xl bg-flux-subtle border border-flux-border flex items-center justify-center text-xs font-bold text-white">
-                      {post.author.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-white">{post.author}</span>
-                        {post.pinned && <Pin size={12} className="text-flux-text-tertiary fill-current" />}
-                      </div>
-                      <div className="flex items-center gap-2 text-[10px] text-flux-text-tertiary font-medium">
-                        <span>{post.time}</span>
-                        <span className="w-0.5 h-0.5 bg-flux-text-tertiary rounded-full"></span>
-                        <span className="bg-flux-subtle px-2 py-0.5 rounded text-flux-text-secondary border border-flux-border uppercase tracking-wider text-[9px]">{post.authorRole}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <button className="text-flux-text-tertiary hover:text-white transition-colors p-2 hover:bg-flux-subtle rounded-lg">
-                    <MoreHorizontal size={16} />
-                  </button>
-                </div>
-
-                {post.title && <h3 className="text-base font-bold text-white mb-2">{post.title}</h3>}
-                <p className="text-sm text-flux-text-secondary leading-relaxed mb-5 whitespace-pre-line font-medium">{post.content}</p>
-
-                <div className="flex items-center gap-3 border-t border-flux-border pt-4">
-                  <button className="flex items-center gap-2 text-xs font-medium text-flux-text-tertiary hover:text-white transition-colors bg-flux-subtle px-3 py-2 rounded-lg border border-transparent hover:border-flux-border">
-                    <ThumbsUp size={14} />
-                    {post.likes} <span className="hidden sm:inline">Curtidas</span>
-                  </button>
-                  <button className="flex items-center gap-2 text-xs font-medium text-flux-text-tertiary hover:text-white transition-colors bg-flux-subtle px-3 py-2 rounded-lg border border-transparent hover:border-flux-border">
-                    <MessageSquare size={14} />
-                    {post.comments} <span className="hidden sm:inline">Comentários</span>
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+          <CommunityFeed tenantId={tenantId} />
         </div>
+
 
         {/* Sidebar Widgets */}
         <div className="space-y-6">
