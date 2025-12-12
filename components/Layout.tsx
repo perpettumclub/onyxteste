@@ -597,7 +597,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children, 
 
       {/* Search Modal */}
       {isSearchOpen && (
-        <div className="fixed inset-0 lg:left-72 z-50 flex items-start justify-center pt-4 px-4 pb-4">
+        <div className="fixed inset-0 lg:left-72 z-50 flex items-start justify-center pt-16 px-4 pb-4">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" onClick={() => setIsSearchOpen(false)}></div>
           <div className="relative w-full max-w-2xl animate-scale-in">
             <div className="flux-panel rounded-xl shadow-2xl overflow-hidden bg-flux-black">

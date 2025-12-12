@@ -84,7 +84,7 @@ export const InviteModal: React.FC<InviteModalProps> = ({ isOpen, onClose, tenan
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 lg:left-72 z-50 flex items-start justify-center pt-4 px-4 pb-4">
+        <div className="fixed inset-0 lg:left-72 z-50 flex items-start justify-center pt-16 px-4 pb-4">
             <div className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" onClick={handleClose}></div>
             <div className="relative w-full max-w-md animate-scale-in">
                 <div className="bg-flux-black border border-flux-border rounded-2xl shadow-2xl overflow-hidden">
