@@ -79,6 +79,7 @@ interface UseSettingsDataReturn {
     // Actions - Team
     inviteTeamMember: (email: string, role: 'EDITOR' | 'VIEWER') => Promise<{ success: boolean; message: string }>;
     removeTeamMember: (userId: string) => Promise<{ success: boolean; message: string }>;
+    updateMemberRole: (userId: string, newRole: 'EDITOR' | 'VIEWER') => Promise<{ success: boolean; message: string }>;
 
     // Actions - Notifications
     setNotifications: React.Dispatch<React.SetStateAction<NotificationPreferences>>;
@@ -465,6 +466,29 @@ export function useSettingsData(userId: string, tenantId: string | null): UseSet
         }
     };
 
+    // Update Member Role
+    const updateMemberRole = async (memberId: string, newRole: 'EDITOR' | 'VIEWER'): Promise<{ success: boolean; message: string }> => {
+        if (!tenantId) return { success: false, message: 'Tenant não encontrado' };
+
+        try {
+            const { error } = await supabase
+                .from('tenant_members')
+                .update({ role: newRole })
+                .eq('tenant_id', tenantId)
+                .eq('user_id', memberId);
+
+            if (error) throw error;
+
+            setTeamMembers(prev => prev.map(m =>
+                m.id === memberId ? { ...m, role: newRole } : m
+            ));
+
+            return { success: true, message: `Permissão alterada para ${newRole === 'EDITOR' ? 'Editor' : 'Visualizador'}!` };
+        } catch (err: any) {
+            return { success: false, message: err.message || 'Erro ao alterar permissão' };
+        }
+    };
+
     // Create Affiliate Link
     const createAffiliateLink = async (name: string, commission: number): Promise<{ success: boolean; message: string }> => {
         if (!tenantId) return { success: false, message: 'Tenant não encontrado' };
@@ -625,6 +649,7 @@ export function useSettingsData(userId: string, tenantId: string | null): UseSet
         saveCustomization,
         inviteTeamMember,
         removeTeamMember,
+        updateMemberRole,
         updatePassword,
         createAffiliateLink,
         deleteAffiliateLink,

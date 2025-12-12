@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Task, TaskStatus, TaskLabel, ChecklistItem, Subtask, Playbook, XP_REWARDS } from '../types';
 import { MoreHorizontal, Plus, MessageSquare, Calendar, ChevronLeft, ChevronRight, UserCircle, Edit2, X, Trash2, Tag, AlertTriangle, Filter, CheckSquare, Square, ListChecks, LayoutGrid, List, CalendarDays, Zap, Home, FolderOpen, ChevronDown, Star, Sparkles, Share2, Hash, BarChart3, Table2, GanttChart, Eye, EyeOff, Columns3, Users, Search, Settings, GitBranch } from 'lucide-react';
 import { supabase } from '../services/supabase';
@@ -27,8 +27,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
-  const [draggedOverColumn, setDraggedOverColumn] = useState<TaskStatus | null>(null);
-  const [collapsedColumns, setCollapsedColumns] = useState<Set<TaskStatus>>(new Set());
+  const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
+  const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(new Set());
 
   // Filter states
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -48,8 +48,103 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
   const [isFavorited, setIsFavorited] = useState(false);
 
   // Inline add state
-  const [inlineAddColumn, setInlineAddColumn] = useState<TaskStatus | null>(null);
+  const [inlineAddColumn, setInlineAddColumn] = useState<string | null>(null);
   const [inlineTaskTitle, setInlineTaskTitle] = useState('');
+
+  // Calendar State and Logic
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [calendarView, setCalendarView] = useState<'month' | 'week'>('month');
+
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Sunday
+
+    // Calculate calendar grid
+    const daysPrevMonth = new Date(year, month, 0).getDate();
+    const paddingDays = firstDayOfMonth;
+
+    const days = [];
+
+    // Previous month days
+    for (let i = paddingDays - 1; i >= 0; i--) {
+      days.push({ day: daysPrevMonth - i, type: 'prev', date: new Date(year, month - 1, daysPrevMonth - i) });
+    }
+
+    // Current month days
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push({ day: i, type: 'current', date: new Date(year, month, i) });
+    }
+
+    // Next month days (fill up to 42 cells - 6 rows, or minimum needed)
+    const totalCells = days.length > 35 ? 42 : 35;
+    const remainingCells = totalCells - days.length;
+    for (let i = 1; i <= remainingCells; i++) {
+      days.push({ day: i, type: 'next', date: new Date(year, month + 1, i) });
+    }
+
+    return days;
+  };
+
+  const getDaysInWeek = (date: Date) => {
+    const dayOfWeek = date.getDay(); // 0-6
+    const startOfWeek = new Date(date);
+    startOfWeek.setDate(date.getDate() - dayOfWeek); // Go to Sunday
+
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(startOfWeek);
+      d.setDate(startOfWeek.getDate() + i);
+      days.push({
+        day: d.getDate(),
+        type: d.getMonth() === date.getMonth() ? 'current' : 'next',
+        date: d
+      });
+    }
+    return days;
+  };
+
+  const calendarDays = useMemo(() => {
+    if (calendarView === 'week') return getDaysInWeek(currentDate);
+    return getDaysInMonth(currentDate);
+  }, [currentDate, calendarView]);
+
+  const goToPrev = () => {
+    if (calendarView === 'month') {
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+    } else {
+      const d = new Date(currentDate);
+      d.setDate(d.getDate() - 7);
+      setCurrentDate(d);
+    }
+  };
+
+  const goToNext = () => {
+    if (calendarView === 'month') {
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+    } else {
+      const d = new Date(currentDate);
+      d.setDate(d.getDate() + 7);
+      setCurrentDate(d);
+    }
+  };
+
+  const goToToday = () => setCurrentDate(new Date());
+
+  const isTaskOnDay = (task: Task, date: Date) => {
+    if (!task.dueDate) return false;
+    // Extract YYYY-MM-DD from task (assuming ISO string or compatible)
+    const taskDatePart = task.dueDate.split('T')[0];
+
+    // Format calendar date as YYYY-MM-DD for comparison
+    const calYear = date.getFullYear();
+    const calMonth = String(date.getMonth() + 1).padStart(2, '0');
+    const calDay = String(date.getDate()).padStart(2, '0');
+    const calDatePart = `${calYear}-${calMonth}-${calDay}`;
+
+    return taskDatePart === calDatePart;
+  };
 
   const [formData, setFormData] = useState({
     title: '',
@@ -161,13 +256,43 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
     }
   };
 
-  // Use customColumns as the source of truth
-  const columns = customColumns;
-
   // Get unique assignees for filter dropdown
   const uniqueAssignees = useMemo(() => {
     return [...new Set(tasks.map(t => t.assignee).filter(Boolean))];
   }, [tasks]);
+
+  // Dynamic columns based on groupBy
+  const boardColumns = useMemo(() => {
+    if (groupBy === 'status') return customColumns;
+    if (groupBy === 'assignee') {
+      const assignees = uniqueAssignees.length > 0 ? uniqueAssignees : [];
+      // Ensure specific order or inclusion if needed
+      const cols = assignees.map(a => ({ id: a, label: a, color: 'bg-onyx-500' }));
+      cols.push({ id: 'Unassigned', label: 'Sem Responsável', color: 'bg-onyx-500' });
+      return cols;
+    }
+    if (groupBy === 'priority') {
+      return [
+        { id: 'HIGH', label: 'Alta', color: 'bg-red-500' },
+        { id: 'MEDIUM', label: 'Média', color: 'bg-yellow-500' },
+        { id: 'LOW', label: 'Baixa', color: 'bg-blue-500' },
+        { id: 'NONE', label: 'Sem Prioridade', color: 'bg-onyx-500' }
+      ];
+    }
+    // Fallback/Default
+    return customColumns;
+  }, [groupBy, customColumns, uniqueAssignees]);
+
+  // State for visible columns
+  const [visibleColumnIds, setVisibleColumnIds] = useState<string[]>([]);
+
+  // Reset visible columns (show all) when grouping changes
+  useEffect(() => {
+    setVisibleColumnIds(boardColumns.map(c => c.id));
+  }, [boardColumns]);
+
+  // Use dynamic columns as the source of truth for rendering
+  const columns = boardColumns;
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
@@ -204,20 +329,29 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
     e.dataTransfer.dropEffect = 'move';
   };
 
-  const handleDragEnter = (status: TaskStatus) => {
-    setDraggedOverColumn(status);
+  const handleDragEnter = (colId: string) => {
+    setDraggedOverColumn(colId);
   };
 
   const handleDragLeave = () => {
     setDraggedOverColumn(null);
   };
 
-  const handleDrop = (e: React.DragEvent, newStatus: TaskStatus) => {
+  const handleDrop = (e: React.DragEvent, newColId: string) => {
     e.preventDefault();
     if (draggedTask) {
-      setTasks(prev => prev.map(task =>
-        task.id === draggedTask ? { ...task, status: newStatus } : task
-      ));
+      setTasks(prev => prev.map(task => {
+        if (task.id !== draggedTask) return task;
+
+        if (groupBy === 'status') return { ...task, status: newColId as TaskStatus };
+        if (groupBy === 'assignee') return { ...task, assignee: newColId === 'Unassigned' ? '' : newColId };
+        if (groupBy === 'priority') {
+          if (newColId === 'NONE') return { ...task, priority: 'MEDIUM' }; // Reset to default? Or handle as needed
+          return { ...task, priority: newColId as any };
+        }
+
+        return task;
+      }));
     }
     setDraggedTask(null);
     setDraggedOverColumn(null);
@@ -365,7 +499,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
       {/* ═══════════════════════════════════════════════════════════════════════════ */}
       {/* TOOLBAR ESTILO CLICKUP                                                       */}
       {/* ═══════════════════════════════════════════════════════════════════════════ */}
-      <div className="premium-card rounded-xl border border-white/[0.04] mb-4">
+      <div className="premium-card rounded-xl border border-white/[0.04] mb-4 overflow-visible">
         {/* Barra 1: Abas de Visualização */}
         <div className="flex items-center gap-1 px-4 py-2 border-b border-white/[0.04] bg-white/[0.005] overflow-x-auto custom-scrollbar">
           <button
@@ -437,7 +571,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
               {isGroupDropdownOpen && (
                 <>
                   <div className="fixed inset-0 z-[99]" onClick={() => setIsGroupDropdownOpen(false)}></div>
-                  <div className="absolute top-full left-0 mt-2 w-48 premium-card rounded-lg shadow-premium-xl z-[100] py-1 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute top-full left-0 mt-2 w-48 premium-card rounded-lg shadow-premium-xl z-[100] py-1 animate-fade-in">
                     {[
                       { value: 'status', label: 'Status', icon: LayoutGrid },
                       { value: 'assignee', label: 'Responsável', icon: Users },
@@ -472,11 +606,22 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
               {isColumnsDropdownOpen && (
                 <>
                   <div className="fixed inset-0 z-[99]" onClick={() => setIsColumnsDropdownOpen(false)}></div>
-                  <div className="absolute top-full left-0 mt-2 w-48 premium-card rounded-lg shadow-premium-xl z-[100] py-2 px-3 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute top-full left-0 mt-2 w-48 premium-card rounded-lg shadow-premium-xl z-[100] py-2 px-3 animate-fade-in">
                     <p className="text-[10px] text-onyx-500 uppercase tracking-wider mb-2 font-bold">Colunas Visíveis</p>
                     {columns.map(col => (
                       <label key={col.id} className="flex items-center gap-2 py-1.5 cursor-pointer">
-                        <input type="checkbox" defaultChecked className="w-3.5 h-3.5 rounded border-onyx-600 bg-transparent checked:bg-white checked:border-white" />
+                        <input
+                          type="checkbox"
+                          checked={visibleColumnIds.includes(col.id)}
+                          onChange={() => {
+                            if (visibleColumnIds.includes(col.id)) {
+                              setVisibleColumnIds(prev => prev.filter(id => id !== col.id));
+                            } else {
+                              setVisibleColumnIds(prev => [...prev, col.id]);
+                            }
+                          }}
+                          className="w-3.5 h-3.5 rounded border-onyx-600 bg-transparent checked:bg-white checked:border-white"
+                        />
                         <span className="text-xs text-onyx-300">{col.label}</span>
                       </label>
                     ))}
@@ -504,7 +649,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
               {isFilterOpen && (
                 <>
                   <div className="fixed inset-0 z-[99]" onClick={() => setIsFilterOpen(false)}></div>
-                  <div className="absolute top-full right-0 mt-2 w-72 premium-card rounded-xl shadow-premium-xl z-[100] p-4 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute top-full right-0 mt-2 w-72 premium-card rounded-xl shadow-premium-xl z-[100] p-4 space-y-4 animate-fade-in">
                     <div>
                       <label className="block text-[10px] font-bold text-onyx-500 uppercase mb-2 tracking-wider">Etiqueta</label>
                       <select
@@ -567,7 +712,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
               {isAssigneeDropdownOpen && (
                 <>
                   <div className="fixed inset-0 z-[99]" onClick={() => setIsAssigneeDropdownOpen(false)}></div>
-                  <div className="absolute top-full right-0 mt-2 w-48 premium-card rounded-lg shadow-premium-xl z-[100] py-1 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute top-full right-0 mt-2 w-48 premium-card rounded-lg shadow-premium-xl z-[100] py-1 animate-fade-in">
                     <button
                       onClick={() => { setFilterAssignee(''); setIsAssigneeDropdownOpen(false); }}
                       className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium transition-colors ${!filterAssignee ? 'bg-white/[0.1] text-white' : 'text-onyx-400 hover:text-white hover:bg-white/[0.05]'}`}
@@ -651,9 +796,14 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
               <div className="col-span-2">Status</div>
             </div>
 
-            {/* Grouped by Status */}
-            {columns.map(col => {
-              const colTasks = filteredTasks.filter(t => t.status === col.id);
+            {/* Grouped Lists (Dynamic) */}
+            {columns.filter(col => visibleColumnIds.includes(col.id)).map(col => {
+              const colTasks = filteredTasks.filter(t => {
+                if (groupBy === 'status') return t.status === col.id;
+                if (groupBy === 'assignee') return (t.assignee || 'Unassigned') === col.id;
+                if (groupBy === 'priority') return (t.priority || 'NONE') === col.id;
+                return false;
+              });
               const isCollapsed = collapsedColumns.has(col.id);
 
               return (
@@ -733,11 +883,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
                                     id: `t-${Date.now()}`,
                                     title: inlineTaskTitle.trim(),
                                     description: '',
-                                    assignee: '',
+                                    assignee: groupBy === 'assignee' && col.id !== 'Unassigned' ? col.id : '',
                                     dueDate: new Date().toISOString().split('T')[0],
-                                    status: col.id,
+                                    status: groupBy === 'status' ? (col.id as TaskStatus) : TaskStatus.TODO,
                                     labels: [],
-                                    priority: 'MEDIUM',
+                                    priority: groupBy === 'priority' && col.id !== 'NONE' ? (col.id as any) : 'MEDIUM',
                                     checklist: [],
                                     comments: []
                                   };
@@ -780,14 +930,23 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
             {/* Calendar Header (Control Bar - INSIDE Card) */}
             <div className="flex items-center gap-4 px-6 py-4 border-b border-white/[0.04] bg-white/[0.01]">
               <div className="flex items-center gap-2">
-                <button className="px-3 py-1.5 text-xs font-medium text-white bg-white/[0.05] hover:bg-white/[0.1] rounded-lg transition-colors border border-white/[0.05]">
+                <button
+                  onClick={goToToday}
+                  className="px-3 py-1.5 text-xs font-medium text-white bg-white/[0.05] hover:bg-white/[0.1] rounded-lg transition-colors border border-white/[0.05]"
+                >
                   Hoje
                 </button>
                 <div className="flex bg-white/[0.05] rounded-lg p-0.5 border border-white/[0.05]">
-                  <button className="px-3 py-1 text-xs font-medium text-white bg-white/[0.1] rounded shadow-sm">
+                  <button
+                    onClick={() => setCalendarView('month')}
+                    className={`px-3 py-1 text-xs font-medium rounded shadow-sm transition-all ${calendarView === 'month' ? 'bg-white/[0.1] text-white' : 'text-onyx-400 hover:text-white'}`}
+                  >
                     Mês
                   </button>
-                  <button className="px-3 py-1 text-xs font-medium text-onyx-400 hover:text-white transition-colors">
+                  <button
+                    onClick={() => setCalendarView('week')}
+                    className={`px-3 py-1 text-xs font-medium rounded shadow-sm transition-all ${calendarView === 'week' ? 'bg-white/[0.1] text-white' : 'text-onyx-400 hover:text-white'}`}
+                  >
                     Semana
                   </button>
                 </div>
@@ -796,21 +955,29 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
               <div className="h-4 w-px bg-white/[0.1]"></div>
 
               <div className="flex items-center gap-1">
-                <button className="p-1.5 text-onyx-400 hover:text-white transition-colors rounded-lg hover:bg-white/[0.05]">
+                <button
+                  onClick={goToPrev}
+                  className="p-1.5 text-onyx-400 hover:text-white transition-colors rounded-lg hover:bg-white/[0.05]"
+                >
                   <ChevronLeft size={16} />
                 </button>
-                <button className="p-1.5 text-onyx-400 hover:text-white transition-colors rounded-lg hover:bg-white/[0.05]">
+                <button
+                  onClick={goToNext}
+                  className="p-1.5 text-onyx-400 hover:text-white transition-colors rounded-lg hover:bg-white/[0.05]"
+                >
                   <ChevronRight size={16} />
                 </button>
               </div>
 
-              <h3 className="text-sm font-bold text-white ml-2">Dezembro 2024</h3>
+              <h3 className="text-sm font-bold text-white ml-2 capitalize">
+                {currentDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
+              </h3>
 
               <div className="flex-1"></div>
 
               <div className="flex items-center gap-4 text-xs font-medium text-onyx-400">
-                <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-onyx-600"></div> 3 Não agendado</span>
-                <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-500"></div> 0 Em atraso</span>
+                <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-onyx-600"></div> Não agendado</span>
+                <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-500"></div> Em atraso</span>
               </div>
             </div>
 
@@ -824,23 +991,20 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
             </div>
 
             {/* Calendar Grid Body */}
-            <div className="grid grid-cols-7 flex-1 auto-rows-fr bg-[#0f0f11]">
-              {Array.from({ length: 35 }, (_, i) => {
-                const dayNum = i - 6 + 1;
-                const isCurrentMonth = dayNum > 0 && dayNum <= 31;
-                const tasksOnDay = filteredTasks.filter(t => {
-                  const d = new Date(t.dueDate);
-                  return d.getDate() === dayNum && d.getMonth() === 11;
-                });
+            <div className="grid grid-cols-7 flex-1 overflow-y-auto custom-scrollbar bg-[#0f0f11] auto-rows-[minmax(120px,1fr)]">
+              {calendarDays.map((dayItem, i) => {
+                const isCurrentMonth = dayItem.type === 'current';
+                const tasksOnDay = filteredTasks.filter(t => isTaskOnDay(t, dayItem.date));
+                const isToday = new Date().toDateString() === dayItem.date.toDateString();
 
                 return (
                   <div
                     key={i}
-                    className={`min-h-[120px] border-r border-b border-white/[0.04] p-2 relative group hover:bg-white/[0.01] transition-colors flex flex-col gap-1 ${!isCurrentMonth ? 'bg-stripes-onyx opacity-50' : ''}`}
+                    className={`border-r border-b border-white/[0.04] p-2 relative group hover:bg-white/[0.01] transition-colors flex flex-col gap-1 ${!isCurrentMonth ? 'bg-stripes-onyx opacity-30' : ''}`}
                   >
                     {/* Content Area */}
                     <div className="flex-1 space-y-1">
-                      {isCurrentMonth && tasksOnDay.map(task => (
+                      {tasksOnDay.map(task => (
                         <div
                           key={task.id}
                           onClick={() => openModal(task)}
@@ -856,18 +1020,25 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
                     </div>
 
                     {/* Date Number (Bottom Right) */}
-                    {isCurrentMonth && (
-                      <div className={`text-xs absolute bottom-2 right-2 font-medium ${dayNum === 7 ? 'bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center' : 'text-onyx-500'}`}>
-                        {dayNum}
-                      </div>
-                    )}
+                    <div className={`text-xs absolute bottom-2 right-2 font-medium ${isToday ? 'bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg shadow-purple-900/50' : isCurrentMonth ? 'text-onyx-400' : 'text-onyx-700'}`}>
+                      {dayItem.day}
+                    </div>
 
                     {/* Add Button on Hover */}
-                    {isCurrentMonth && (
-                      <button onClick={() => { setInlineAddColumn(TaskStatus.TODO); setInlineTaskTitle(''); }} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 hover:bg-white/[0.1] rounded text-onyx-400 hover:text-white transition-all">
-                        <Plus size={14} />
-                      </button>
-                    )}
+                    <button
+                      onClick={() => {
+                        setInlineAddColumn(TaskStatus.TODO);
+                        setInlineTaskTitle('');
+                        // Optional: Pre-fill date when adding from calendar
+                        setFormData(prev => ({
+                          ...prev,
+                          dueDate: `${dayItem.date.getFullYear()}-${String(dayItem.date.getMonth() + 1).padStart(2, '0')}-${String(dayItem.date.getDate()).padStart(2, '0')}`
+                        }));
+                      }}
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 hover:bg-white/[0.1] rounded text-onyx-400 hover:text-white transition-all"
+                    >
+                      <Plus size={14} />
+                    </button>
                   </div>
                 );
               })}
@@ -1301,8 +1472,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
         viewMode === 'board' && (
           <div className="flex-1 overflow-x-auto pb-4 custom-scrollbar">
             <div className="flex gap-6 min-w-[1000px] h-full">
-              {columns.map(col => {
-                const colTasks = filteredTasks.filter(t => t.status === col.id);
+              {columns.filter(col => visibleColumnIds.includes(col.id)).map(col => {
+                const colTasks = filteredTasks.filter(t => {
+                  if (groupBy === 'status') return t.status === col.id;
+                  if (groupBy === 'assignee') return (t.assignee || 'Unassigned') === col.id;
+                  if (groupBy === 'priority') return (t.priority || 'NONE') === col.id;
+                  return false;
+                });
                 return (
                   <div
                     key={col.id}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Mail, Lock, Users, Link2, Bell, Palette, Webhook, Copy, Check, Plus, Trash2, Send, Shield, Globe, Camera, Save, ExternalLink, ChevronRight, Sparkles, Loader2, Key, RefreshCw } from 'lucide-react';
 import { useSettingsData } from '../hooks/useSettingsData';
 
@@ -24,6 +24,14 @@ const INTEGRATION_META: Record<string, { name: string; icon: string; desc: strin
 
 export const Settings: React.FC<SettingsProps> = ({ user, tenantId, initialTab }) => {
     const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab || 'profile');
+
+    useEffect(() => {
+        const storedTab = localStorage.getItem('settingsTab') as SettingsTab | null;
+        if (storedTab) {
+            setActiveTab(storedTab);
+            localStorage.removeItem('settingsTab');
+        }
+    }, []);
     const [isSaving, setIsSaving] = useState(false);
     const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
@@ -64,6 +72,7 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId, initialTab }
         saveCustomization,
         inviteTeamMember,
         removeTeamMember,
+        updateMemberRole,
         updatePassword,
         createAffiliateLink,
         deleteAffiliateLink,
@@ -180,6 +189,12 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId, initialTab }
         const result = await toggleIntegration(provider, !currentlyConnected);
         showMessage(result.message);
         setIsSaving(false);
+    };
+
+    const handleUpdateRole = async (memberId: string, currentRole: 'EDITOR' | 'VIEWER') => {
+        const newRole = currentRole === 'EDITOR' ? 'VIEWER' : 'EDITOR';
+        const result = await updateMemberRole(memberId, newRole);
+        showMessage(result.message);
     };
 
     if (isLoading) {
@@ -416,14 +431,22 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId, initialTab }
                                             <p className="text-white font-medium">{member.name}</p>
                                             <p className="text-onyx-500 text-sm">{member.email}</p>
                                         </div>
-                                        <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${member.status === 'pending'
-                                            ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
-                                            : member.role === 'EDITOR'
-                                                ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                                                : 'bg-white/5 text-onyx-400 border border-white/[0.06]'
-                                            }`}>
-                                            {member.status === 'pending' ? 'Pendente' : member.role === 'EDITOR' ? 'Editor' : 'Visualizador'}
-                                        </span>
+                                        {member.status === 'pending' ? (
+                                            <span className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
+                                                Pendente
+                                            </span>
+                                        ) : (
+                                            <button
+                                                onClick={() => handleUpdateRole(member.id, member.role as 'EDITOR' | 'VIEWER')}
+                                                title="Clique para alterar permissão"
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all hover:scale-105 ${member.role === 'EDITOR'
+                                                    ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20'
+                                                    : 'bg-white/5 text-onyx-400 border border-white/[0.06] hover:bg-white/10'
+                                                    }`}
+                                            >
+                                                {member.role === 'EDITOR' ? 'Editor' : 'Visualizador'}
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => handleRemoveMember(member.id)}
                                             className="p-2.5 rounded-xl text-onyx-600 hover:text-white hover:bg-white/[0.03] opacity-0 group-hover:opacity-100 transition-all"

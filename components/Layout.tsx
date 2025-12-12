@@ -372,7 +372,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children, 
               <div className="absolute bottom-full left-4 right-4 mb-2 flux-card shadow-lg z-20 overflow-hidden animate-fade-in">
                 <div className="p-1">
                   <button
-                    onClick={() => { setView(ViewState.SETTINGS); setIsUserMenuOpen(false); }}
+                    onClick={() => { localStorage.setItem('settingsTab', 'affiliates'); setView(ViewState.SETTINGS); setIsUserMenuOpen(false); }}
                     className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-3 transition-colors ${currentView === ViewState.SETTINGS
                       ? 'bg-white/[0.08] text-white'
                       : 'text-flux-text-secondary hover:bg-white/[0.04] hover:text-white'

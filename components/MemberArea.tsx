@@ -528,10 +528,10 @@ export const MemberArea: React.FC<MemberAreaProps> = ({ modules, setModules, use
 
                <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1">
                   {activeModule.lessons.map((lesson, idx) => (
-                     <button
+                     <div
                         key={lesson.id}
                         onClick={() => setActiveLesson(lesson)}
-                        className={`w-full flex items-start gap-3 p-3 text-left transition-all rounded-xl group ${activeLesson.id === lesson.id
+                        className={`w-full flex items-center gap-3 p-3 text-left transition-all rounded-xl group cursor-pointer ${activeLesson.id === lesson.id
                            ? 'bg-white/[0.06] border border-white/[0.05] shadow-inner'
                            : 'hover:bg-white/[0.03] border border-transparent'
                            }`}
@@ -571,7 +571,22 @@ export const MemberArea: React.FC<MemberAreaProps> = ({ modules, setModules, use
                            </p>
                            <span className="text-[10px] text-onyx-600 font-mono">{lesson.duration}</span>
                         </div>
-                     </button>
+
+                        {/* Action Button */}
+                        <button
+                           onClick={(e) => {
+                              e.stopPropagation();
+                              toggleLessonComplete(lesson.id);
+                           }}
+                           className={`p-2 rounded-lg transition-all border ${lesson.isCompleted
+                              ? 'bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20 shadow-glow-green-sm'
+                              : 'bg-white/[0.05] text-onyx-600 border-white/[0.05] hover:bg-white/[0.1] hover:text-white group-hover:border-white/[0.1]'
+                              }`}
+                           title={lesson.isCompleted ? "Marcar como não concluída" : "Marcar como concluída"}
+                        >
+                           <CheckCircle size={16} />
+                        </button>
+                     </div>
                   ))}
                </div>
 
