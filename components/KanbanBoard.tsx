@@ -365,7 +365,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
       {/* ═══════════════════════════════════════════════════════════════════════════ */}
       {/* TOOLBAR ESTILO CLICKUP                                                       */}
       {/* ═══════════════════════════════════════════════════════════════════════════ */}
-      <div className="premium-card rounded-xl border border-white/[0.04] mb-4 overflow-hidden">
+      <div className="premium-card rounded-xl border border-white/[0.04] mb-4">
         {/* Barra 1: Abas de Visualização */}
         <div className="flex items-center gap-1 px-4 py-2 border-b border-white/[0.04] bg-white/[0.005] overflow-x-auto custom-scrollbar">
           <button
@@ -421,7 +421,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, setTasks }) => 
         </div>
 
         {/* Barra 3: Ferramentas de Organização (Simplificada) */}
-        <div className="flex items-center justify-between px-4 py-2 bg-white/[0.02]">
+        <div className="flex items-center justify-between px-4 py-2 bg-white/[0.02] overflow-visible relative z-50">
           {/* Lado Esquerdo: Grupo, Subtarefas, Colunas */}
           <div className="flex items-center gap-1">
             {/* Dropdown Grupo */}
