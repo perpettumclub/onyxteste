@@ -12,7 +12,7 @@ interface SettingsProps {
     tenantId?: string;
 }
 
-type SettingsTab = 'profile' | 'team' | 'affiliates' | 'integrations' | 'notifications' | 'customization';
+type SettingsTab = 'profile' | 'team' | 'integrations' | 'notifications' | 'customization';
 
 const INTEGRATION_META: Record<string, { name: string; icon: string; desc: string }> = {
     stripe: { name: 'Stripe', icon: '💳', desc: 'Pagamentos' },
@@ -74,7 +74,6 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
     const tabs = [
         { id: 'profile' as SettingsTab, label: 'Perfil', icon: User },
         { id: 'team' as SettingsTab, label: 'Equipe', icon: Users },
-        { id: 'affiliates' as SettingsTab, label: 'Afiliados', icon: Link2 },
         { id: 'integrations' as SettingsTab, label: 'Integrações', icon: Webhook },
         { id: 'notifications' as SettingsTab, label: 'Notificações', icon: Bell },
         { id: 'customization' as SettingsTab, label: 'Personalização', icon: Palette },
@@ -440,120 +439,6 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
                                         <p className="text-onyx-400 font-medium">Nenhum membro convidado</p>
                                         <p className="text-onyx-600 text-sm mt-1">Use o formulário acima para convidar pessoas</p>
                                     </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Affiliates Tab */}
-                    {activeTab === 'affiliates' && (
-                        <div className="space-y-8 animate-fade-in">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h2 className="text-xl font-semibold text-white mb-1">Programa de Afiliados</h2>
-                                    <p className="text-onyx-500 text-sm">Gerencie seus links e comissões</p>
-                                </div>
-                                <div className="flex items-center gap-2 premium-badge px-3 py-1.5 rounded-lg">
-                                    <span className="w-1.5 h-1.5 bg-white rounded-full live-indicator"></span>
-                                    <span className="text-white/70 text-xs font-medium">Ativo</span>
-                                </div>
-                            </div>
-
-                            {/* Stats */}
-                            <div className="grid grid-cols-3 gap-4">
-                                <div className="stat-card rounded-2xl p-5">
-                                    <p className="text-onyx-500 text-[11px] uppercase font-semibold tracking-wider mb-2">Total de Cliques</p>
-                                    <p className="text-3xl font-semibold text-white number-display">{affiliateLinks.reduce((acc, l) => acc + l.clicks, 0).toLocaleString()}</p>
-                                </div>
-                                <div className="stat-card rounded-2xl p-5">
-                                    <p className="text-onyx-500 text-[11px] uppercase font-semibold tracking-wider mb-2">Conversões</p>
-                                    <p className="text-3xl font-semibold text-white number-display">{affiliateLinks.reduce((acc, l) => acc + l.conversions, 0)}</p>
-                                </div>
-                                <div className="stat-card rounded-2xl p-5">
-                                    <p className="text-onyx-500 text-[11px] uppercase font-semibold tracking-wider mb-2">Comissão Média</p>
-                                    <p className="text-3xl font-semibold text-white number-display">{affiliateLinks.length > 0 ? Math.round(affiliateLinks.reduce((acc, l) => acc + l.commission, 0) / affiliateLinks.length) : 0}%</p>
-                                </div>
-                            </div>
-
-                            {/* Create Link */}
-                            <div className="premium-card rounded-2xl p-5">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                                        <Link2 size={14} className="text-onyx-400" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-white font-medium text-sm">Criar Novo Link</h3>
-                                        <p className="text-onyx-500 text-xs">Gere um link de afiliado personalizado</p>
-                                    </div>
-                                </div>
-                                <div className="flex gap-3">
-                                    <input
-                                        type="text"
-                                        value={newLinkName}
-                                        onChange={e => setNewLinkName(e.target.value)}
-                                        placeholder="Nome do link (ex: YouTube)"
-                                        className="flex-1 premium-input rounded-xl px-4 py-3 text-white text-sm"
-                                    />
-                                    <div className="flex items-center gap-2 premium-input rounded-xl px-4">
-                                        <input
-                                            type="number"
-                                            value={newLinkCommission}
-                                            onChange={e => setNewLinkCommission(Number(e.target.value))}
-                                            className="w-12 bg-transparent text-white text-sm focus:outline-none text-center"
-                                            min={1}
-                                            max={100}
-                                        />
-                                        <span className="text-onyx-500 text-sm">%</span>
-                                    </div>
-                                    <button
-                                        onClick={handleCreateAffiliateLink}
-                                        disabled={isSaving || !newLinkName}
-                                        className="premium-btn flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm text-black disabled:opacity-50"
-                                    >
-                                        <Plus size={14} /> Criar
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Links List */}
-                            <div className="space-y-3">
-                                {affiliateLinks.length === 0 ? (
-                                    <div className="text-center py-12">
-                                        <div className="w-16 h-16 rounded-2xl bg-white/[0.02] border border-white/[0.04] flex items-center justify-center mx-auto mb-4">
-                                            <Link2 size={24} className="text-onyx-600" />
-                                        </div>
-                                        <p className="text-onyx-400 font-medium">Nenhum link de afiliado</p>
-                                        <p className="text-onyx-600 text-sm mt-1">Crie seu primeiro link acima</p>
-                                    </div>
-                                ) : (
-                                    affiliateLinks.map(link => (
-                                        <div key={link.id} className="premium-card flex items-center gap-4 p-4 rounded-2xl group">
-                                            <div className="flex-1">
-                                                <p className="text-white font-medium">{link.name}</p>
-                                                <div className="flex items-center gap-2 mt-2">
-                                                    <code className="text-xs bg-white/[0.03] border border-white/[0.06] px-3 py-1.5 rounded-lg text-onyx-400 font-mono">
-                                                        onyxclub.io/r/{link.code}
-                                                    </code>
-                                                    <button
-                                                        onClick={() => copyToClipboard(`https://onyxclub.io/r/${link.code}`, link.id)}
-                                                        className="p-1.5 rounded-lg text-onyx-500 hover:text-white hover:bg-white/[0.03] transition-all"
-                                                    >
-                                                        {copied === link.id ? <Check size={14} className="text-white" /> : <Copy size={14} />}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-white font-semibold text-lg number-display">{link.commission}%</p>
-                                                <p className="text-onyx-500 text-xs">{link.clicks.toLocaleString()} cliques • {link.conversions} vendas</p>
-                                            </div>
-                                            <button
-                                                onClick={() => handleDeleteAffiliateLink(link.id)}
-                                                className="p-2.5 rounded-xl text-onyx-600 hover:text-white hover:bg-white/[0.03] opacity-0 group-hover:opacity-100 transition-all"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    ))
                                 )}
                             </div>
                         </div>
