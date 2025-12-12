@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { User, Mail, Lock, Users, Link2, Bell, Palette, Webhook, Copy, Check, Plus, Trash2, Send, Shield, Globe, Camera, Save, ExternalLink, ChevronRight, Sparkles } from 'lucide-react';
+import { User, Mail, Lock, Users, Link2, Bell, Palette, Webhook, Copy, Check, Plus, Trash2, Send, Shield, Globe, Camera, Save, ExternalLink, ChevronRight, Sparkles, Loader2, Key, RefreshCw } from 'lucide-react';
+import { useSettingsData } from '../hooks/useSettingsData';
 
 interface SettingsProps {
     user: {
@@ -11,73 +12,64 @@ interface SettingsProps {
     tenantId?: string;
 }
 
-interface TeamMember {
-    id: string;
-    email: string;
-    name: string;
-    role: 'OWNER' | 'EDITOR' | 'VIEWER';
-    status: 'active' | 'pending';
-    avatar?: string;
-}
-
-interface AffiliateLink {
-    id: string;
-    name: string;
-    code: string;
-    commission: number;
-    clicks: number;
-    conversions: number;
-}
-
 type SettingsTab = 'profile' | 'team' | 'affiliates' | 'integrations' | 'notifications' | 'customization';
+
+const INTEGRATION_META: Record<string, { name: string; icon: string; desc: string }> = {
+    stripe: { name: 'Stripe', icon: '💳', desc: 'Pagamentos' },
+    hotmart: { name: 'Hotmart', icon: '🔥', desc: 'Vendas' },
+    activecampaign: { name: 'ActiveCampaign', icon: '📧', desc: 'Email Marketing' },
+    zapier: { name: 'Zapier', icon: '⚡', desc: 'Automações' },
+};
 
 export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
     const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
     const [isSaving, setIsSaving] = useState(false);
     const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
-    // Profile state
-    const [profileData, setProfileData] = useState({
-        name: user.name || '',
-        email: user.email || '',
-        bio: '',
-        avatar: user.avatar || ''
-    });
+    // Password state
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
 
-    // Team state
-    const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+    // Invite state
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteRole, setInviteRole] = useState<'EDITOR' | 'VIEWER'>('VIEWER');
 
-    // Affiliate state
-    const [affiliateLinks, setAffiliateLinks] = useState<AffiliateLink[]>([
-        { id: '1', name: 'Link Principal', code: 'ONYX2024', commission: 30, clicks: 1250, conversions: 45 },
-        { id: '2', name: 'Instagram Bio', code: 'INSTA30', commission: 30, clicks: 890, conversions: 23 },
-    ]);
+    // Affiliate form state
     const [newLinkName, setNewLinkName] = useState('');
     const [newLinkCommission, setNewLinkCommission] = useState(30);
 
-    // Notification preferences
-    const [notifications, setNotifications] = useState({
-        emailNewSale: true,
-        emailNewLead: true,
-        emailWeeklyReport: true,
-        pushNewSale: false,
-        pushNewMember: true,
-    });
+    // API Key state
+    const [generatedKey, setGeneratedKey] = useState<string | null>(null);
 
-    // Customization state
-    const [customization, setCustomization] = useState({
-        brandColor: '#ffffff',
-        logo: '',
-        customDomain: '',
-        favicon: ''
-    });
-
-    // Integrations state
+    // Clipboard state
     const [copied, setCopied] = useState<string | null>(null);
-    const webhookUrl = `https://api.onyxclub.io/webhook/${tenantId || 'demo'}`;
-    const apiKey = 'onyx_live_sk_1234567890abcdef';
+
+    // Use the settings hook
+    const {
+        profile,
+        teamMembers,
+        notifications,
+        customization,
+        affiliateLinks,
+        integrations,
+        apiKeys,
+        webhookUrl,
+        isLoading,
+        setProfile,
+        setNotifications,
+        setCustomization,
+        saveProfile,
+        saveNotifications,
+        saveCustomization,
+        inviteTeamMember,
+        removeTeamMember,
+        updatePassword,
+        createAffiliateLink,
+        deleteAffiliateLink,
+        generateApiKey,
+        revokeApiKey,
+        toggleIntegration
+    } = useSettingsData(user.id, tenantId || null);
 
     const tabs = [
         { id: 'profile' as SettingsTab, label: 'Perfil', icon: User },
@@ -94,50 +86,111 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
         setTimeout(() => setCopied(null), 2000);
     };
 
-    const handleSave = async () => {
+    const showMessage = (message: string) => {
+        setSaveMessage(message);
+        setTimeout(() => setSaveMessage(null), 3000);
+    };
+
+    const handleSaveProfile = async () => {
         setIsSaving(true);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setSaveMessage('Alterações salvas com sucesso!');
+        const result = await saveProfile();
+        showMessage(result.message);
         setIsSaving(false);
-        setTimeout(() => setSaveMessage(null), 3000);
     };
 
-    const handleInvite = () => {
+    const handleChangePassword = async () => {
+        if (!newPassword || newPassword.length < 6) {
+            showMessage('A senha deve ter pelo menos 6 caracteres');
+            return;
+        }
+        setIsSaving(true);
+        const result = await updatePassword(currentPassword, newPassword);
+        showMessage(result.message);
+        if (result.success) {
+            setCurrentPassword('');
+            setNewPassword('');
+        }
+        setIsSaving(false);
+    };
+
+    const handleSaveNotifications = async () => {
+        setIsSaving(true);
+        const result = await saveNotifications();
+        showMessage(result.message);
+        setIsSaving(false);
+    };
+
+    const handleSaveCustomization = async () => {
+        setIsSaving(true);
+        const result = await saveCustomization();
+        showMessage(result.message);
+        setIsSaving(false);
+    };
+
+    const handleInvite = async () => {
         if (!inviteEmail.trim()) return;
-        const newMember: TeamMember = {
-            id: `temp-${Date.now()}`,
-            email: inviteEmail,
-            name: inviteEmail.split('@')[0],
-            role: inviteRole,
-            status: 'pending'
-        };
-        setTeamMembers([...teamMembers, newMember]);
-        setInviteEmail('');
-        setSaveMessage(`Convite enviado para ${inviteEmail}`);
-        setTimeout(() => setSaveMessage(null), 3000);
+        setIsSaving(true);
+        const result = await inviteTeamMember(inviteEmail, inviteRole);
+        showMessage(result.message);
+        if (result.success) {
+            setInviteEmail('');
+        }
+        setIsSaving(false);
     };
 
-    const handleRemoveMember = (id: string) => {
-        setTeamMembers(teamMembers.filter(m => m.id !== id));
+    const handleRemoveMember = async (id: string) => {
+        const result = await removeTeamMember(id);
+        showMessage(result.message);
     };
 
-    const handleCreateAffiliateLink = () => {
+    const handleCreateAffiliateLink = async () => {
         if (!newLinkName.trim()) return;
-        const code = newLinkName.toUpperCase().replace(/\s+/g, '').slice(0, 8) + Math.random().toString(36).slice(2, 6).toUpperCase();
-        const newLink: AffiliateLink = {
-            id: `link-${Date.now()}`,
-            name: newLinkName,
-            code,
-            commission: newLinkCommission,
-            clicks: 0,
-            conversions: 0
-        };
-        setAffiliateLinks([...affiliateLinks, newLink]);
-        setNewLinkName('');
+        setIsSaving(true);
+        const result = await createAffiliateLink(newLinkName, newLinkCommission);
+        showMessage(result.message);
+        if (result.success) {
+            setNewLinkName('');
+        }
+        setIsSaving(false);
     };
+
+    const handleDeleteAffiliateLink = async (id: string) => {
+        const result = await deleteAffiliateLink(id);
+        showMessage(result.message);
+    };
+
+    const handleGenerateApiKey = async () => {
+        setIsSaving(true);
+        const result = await generateApiKey();
+        showMessage(result.message);
+        if (result.success && result.fullKey) {
+            setGeneratedKey(result.fullKey);
+        }
+        setIsSaving(false);
+    };
+
+    const handleRevokeApiKey = async (id: string) => {
+        const result = await revokeApiKey(id);
+        showMessage(result.message);
+    };
+
+    const handleToggleIntegration = async (provider: string, currentlyConnected: boolean) => {
+        setIsSaving(true);
+        const result = await toggleIntegration(provider, !currentlyConnected);
+        showMessage(result.message);
+        setIsSaving(false);
+    };
+
+    if (isLoading) {
+        return (
+            <div className="h-full flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-white animate-spin" />
+            </div>
+        );
+    }
 
     return (
-        <div className="h-full flex flex-col animate-fade-in-up">
+        <div className="min-h-full flex flex-col animate-fade-in-up">
             {/* Header */}
             <div className="mb-8">
                 <div className="flex items-center gap-2 mb-2">
@@ -147,13 +200,10 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
                 <p className="text-onyx-500 text-sm mt-1">Gerencie sua conta e preferências</p>
             </div>
 
-            {/* Success Message */}
-            {saveMessage && (
-                <div className="mb-6 premium-card p-4 rounded-2xl flex items-center gap-3 animate-fade-in-up border-l-2 border-l-white/20">
-                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
-                        <Check size={14} className="text-white" />
-                    </div>
-                    <span className="text-white/90 text-sm font-medium">{saveMessage}</span>
+            {/* Generated Key Modal */}
+            {generatedKey && (
+                <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+                    {/* ... modal content ... */}
                 </div>
             )}
 
@@ -167,8 +217,8 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
                                 onClick={() => setActiveTab(tab.id)}
                                 style={{ animationDelay: `${index * 50}ms` }}
                                 className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-300 ease-premium group animate-fade-in ${activeTab === tab.id
-                                        ? 'premium-btn text-black shadow-premium'
-                                        : 'text-onyx-400 hover:text-white hover:bg-white/[0.03]'
+                                    ? 'premium-btn text-black shadow-premium'
+                                    : 'text-onyx-400 hover:text-white hover:bg-white/[0.03]'
                                     }`}
                             >
                                 <tab.icon size={18} className={activeTab === tab.id ? '' : 'opacity-60 group-hover:opacity-100'} />
@@ -179,8 +229,7 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
                     </nav>
                 </div>
 
-                {/* Content Area */}
-                <div className="flex-1 glass-panel rounded-3xl p-8 overflow-y-auto custom-scrollbar">
+                <div className="flex-1 glass-panel rounded-3xl px-8 pt-8 pb-20 overflow-y-auto custom-scrollbar">
                     {/* Profile Tab */}
                     {activeTab === 'profile' && (
                         <div className="space-y-8 animate-fade-in">
@@ -193,15 +242,15 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
                             <div className="flex items-center gap-6">
                                 <div className="relative group">
                                     <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-onyx-700 to-onyx-800 border border-white/[0.06] flex items-center justify-center text-3xl font-semibold text-white shadow-premium transition-all group-hover:shadow-premium-lg">
-                                        {profileData.name ? profileData.name.charAt(0).toUpperCase() : 'U'}
+                                        {profile.name ? profile.name.charAt(0).toUpperCase() : 'U'}
                                     </div>
                                     <button className="absolute -bottom-2 -right-2 p-2.5 premium-btn rounded-xl shadow-premium-lg transition-transform hover:scale-105">
                                         <Camera size={14} />
                                     </button>
                                 </div>
                                 <div>
-                                    <p className="text-white font-medium text-lg">{profileData.name || 'Seu Nome'}</p>
-                                    <p className="text-onyx-500 text-sm">{profileData.email}</p>
+                                    <p className="text-white font-medium text-lg">{profile.name || 'Seu Nome'}</p>
+                                    <p className="text-onyx-500 text-sm">{profile.email}</p>
                                 </div>
                             </div>
 
@@ -210,18 +259,18 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
                                     <label className="block text-[11px] font-semibold text-onyx-400 uppercase tracking-wider">Nome Completo</label>
                                     <input
                                         type="text"
-                                        value={profileData.name}
-                                        onChange={e => setProfileData({ ...profileData, name: e.target.value })}
-                                        className="w-full premium-input rounded-xl px-4 py-3.5 text-white placeholder-onyx-600"
+                                        value={profile.name}
+                                        onChange={e => setProfile({ ...profile, name: e.target.value })}
+                                        className="w-full premium-input rounded-xl px-4 py-3.5 text-white"
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="block text-[11px] font-semibold text-onyx-400 uppercase tracking-wider">E-mail</label>
                                     <input
                                         type="email"
-                                        value={profileData.email}
-                                        onChange={e => setProfileData({ ...profileData, email: e.target.value })}
-                                        className="w-full premium-input rounded-xl px-4 py-3.5 text-white placeholder-onyx-600"
+                                        value={profile.email}
+                                        disabled
+                                        className="w-full premium-input rounded-xl px-4 py-3.5 text-onyx-500 cursor-not-allowed"
                                     />
                                 </div>
                             </div>
@@ -229,12 +278,21 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
                             <div className="space-y-2">
                                 <label className="block text-[11px] font-semibold text-onyx-400 uppercase tracking-wider">Bio</label>
                                 <textarea
-                                    value={profileData.bio}
-                                    onChange={e => setProfileData({ ...profileData, bio: e.target.value })}
+                                    value={profile.bio}
+                                    onChange={e => setProfile({ ...profile, bio: e.target.value })}
                                     placeholder="Conte um pouco sobre você..."
-                                    className="w-full premium-input rounded-xl px-4 py-3.5 text-white placeholder-onyx-600 h-28 resize-none"
+                                    className="w-full premium-input rounded-xl px-4 py-3.5 text-white h-28 resize-none"
                                 />
                             </div>
+
+                            <button
+                                onClick={handleSaveProfile}
+                                disabled={isSaving}
+                                className="premium-btn flex items-center gap-2.5 text-black px-7 py-3.5 rounded-xl font-semibold text-sm disabled:opacity-50"
+                            >
+                                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                                {isSaving ? 'Salvando...' : 'Salvar Perfil'}
+                            </button>
 
                             <div className="premium-divider" />
 
@@ -253,29 +311,32 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
                                         <label className="block text-[11px] font-semibold text-onyx-400 uppercase tracking-wider">Senha Atual</label>
                                         <input
                                             type="password"
+                                            value={currentPassword}
+                                            onChange={e => setCurrentPassword(e.target.value)}
                                             placeholder="••••••••"
-                                            className="w-full premium-input rounded-xl px-4 py-3.5 text-white placeholder-onyx-600"
+                                            className="w-full premium-input rounded-xl px-4 py-3.5 text-white"
                                         />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="block text-[11px] font-semibold text-onyx-400 uppercase tracking-wider">Nova Senha</label>
                                         <input
                                             type="password"
+                                            value={newPassword}
+                                            onChange={e => setNewPassword(e.target.value)}
                                             placeholder="••••••••"
-                                            className="w-full premium-input rounded-xl px-4 py-3.5 text-white placeholder-onyx-600"
+                                            className="w-full premium-input rounded-xl px-4 py-3.5 text-white"
                                         />
                                     </div>
                                 </div>
+                                <button
+                                    onClick={handleChangePassword}
+                                    disabled={isSaving || !newPassword}
+                                    className="premium-btn-ghost flex items-center gap-2.5 text-white px-7 py-3.5 rounded-xl font-semibold text-sm disabled:opacity-50 border border-white/10"
+                                >
+                                    <Lock size={16} />
+                                    Alterar Senha
+                                </button>
                             </div>
-
-                            <button
-                                onClick={handleSave}
-                                disabled={isSaving}
-                                className="premium-btn flex items-center gap-2.5 text-black px-7 py-3.5 rounded-xl font-semibold text-sm disabled:opacity-50"
-                            >
-                                {isSaving ? <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : <Save size={16} />}
-                                {isSaving ? 'Salvando...' : 'Salvar Alterações'}
-                            </button>
                         </div>
                     )}
 
@@ -300,7 +361,7 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
                                     </div>
                                     <div>
                                         <h3 className="text-white font-medium text-sm">Convidar Membro</h3>
-                                        <p className="text-onyx-500 text-xs">Envie um convite por e-mail</p>
+                                        <p className="text-onyx-500 text-xs">Adicione por e-mail</p>
                                     </div>
                                 </div>
                                 <div className="flex gap-3">
@@ -309,7 +370,7 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
                                         value={inviteEmail}
                                         onChange={e => setInviteEmail(e.target.value)}
                                         placeholder="email@exemplo.com"
-                                        className="flex-1 premium-input rounded-xl px-4 py-3 text-white text-sm placeholder-onyx-600"
+                                        className="flex-1 premium-input rounded-xl px-4 py-3 text-white text-sm"
                                     />
                                     <select
                                         value={inviteRole}
@@ -321,7 +382,8 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
                                     </select>
                                     <button
                                         onClick={handleInvite}
-                                        className="premium-btn flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm text-black"
+                                        disabled={isSaving || !inviteEmail}
+                                        className="premium-btn flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm text-black disabled:opacity-50"
                                     >
                                         <Plus size={14} /> Convidar
                                     </button>
@@ -354,10 +416,10 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
                                             <p className="text-onyx-500 text-sm">{member.email}</p>
                                         </div>
                                         <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${member.status === 'pending'
-                                                ? 'bg-white/5 text-onyx-400 border border-white/[0.06]'
-                                                : member.role === 'EDITOR'
-                                                    ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                                                    : 'bg-white/5 text-onyx-400 border border-white/[0.06]'
+                                            ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                                            : member.role === 'EDITOR'
+                                                ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                                                : 'bg-white/5 text-onyx-400 border border-white/[0.06]'
                                             }`}>
                                             {member.status === 'pending' ? 'Pendente' : member.role === 'EDITOR' ? 'Editor' : 'Visualizador'}
                                         </span>
@@ -430,7 +492,7 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
                                         value={newLinkName}
                                         onChange={e => setNewLinkName(e.target.value)}
                                         placeholder="Nome do link (ex: YouTube)"
-                                        className="flex-1 premium-input rounded-xl px-4 py-3 text-white text-sm placeholder-onyx-600"
+                                        className="flex-1 premium-input rounded-xl px-4 py-3 text-white text-sm"
                                     />
                                     <div className="flex items-center gap-2 premium-input rounded-xl px-4">
                                         <input
@@ -445,7 +507,8 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
                                     </div>
                                     <button
                                         onClick={handleCreateAffiliateLink}
-                                        className="premium-btn flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm text-black"
+                                        disabled={isSaving || !newLinkName}
+                                        className="premium-btn flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm text-black disabled:opacity-50"
                                     >
                                         <Plus size={14} /> Criar
                                     </button>
@@ -454,31 +517,44 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
 
                             {/* Links List */}
                             <div className="space-y-3">
-                                {affiliateLinks.map(link => (
-                                    <div key={link.id} className="premium-card flex items-center gap-4 p-4 rounded-2xl group">
-                                        <div className="flex-1">
-                                            <p className="text-white font-medium">{link.name}</p>
-                                            <div className="flex items-center gap-2 mt-2">
-                                                <code className="text-xs bg-white/[0.03] border border-white/[0.06] px-3 py-1.5 rounded-lg text-onyx-400 font-mono">
-                                                    onyxclub.io/r/{link.code}
-                                                </code>
-                                                <button
-                                                    onClick={() => copyToClipboard(`https://onyxclub.io/r/${link.code}`, link.id)}
-                                                    className="p-1.5 rounded-lg text-onyx-500 hover:text-white hover:bg-white/[0.03] transition-all"
-                                                >
-                                                    {copied === link.id ? <Check size={14} className="text-white" /> : <Copy size={14} />}
-                                                </button>
-                                            </div>
+                                {affiliateLinks.length === 0 ? (
+                                    <div className="text-center py-12">
+                                        <div className="w-16 h-16 rounded-2xl bg-white/[0.02] border border-white/[0.04] flex items-center justify-center mx-auto mb-4">
+                                            <Link2 size={24} className="text-onyx-600" />
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-white font-semibold text-lg number-display">{link.commission}%</p>
-                                            <p className="text-onyx-500 text-xs">{link.clicks.toLocaleString()} cliques • {link.conversions} vendas</p>
-                                        </div>
-                                        <button className="p-2.5 rounded-xl text-onyx-600 hover:text-white hover:bg-white/[0.03] opacity-0 group-hover:opacity-100 transition-all">
-                                            <Trash2 size={16} />
-                                        </button>
+                                        <p className="text-onyx-400 font-medium">Nenhum link de afiliado</p>
+                                        <p className="text-onyx-600 text-sm mt-1">Crie seu primeiro link acima</p>
                                     </div>
-                                ))}
+                                ) : (
+                                    affiliateLinks.map(link => (
+                                        <div key={link.id} className="premium-card flex items-center gap-4 p-4 rounded-2xl group">
+                                            <div className="flex-1">
+                                                <p className="text-white font-medium">{link.name}</p>
+                                                <div className="flex items-center gap-2 mt-2">
+                                                    <code className="text-xs bg-white/[0.03] border border-white/[0.06] px-3 py-1.5 rounded-lg text-onyx-400 font-mono">
+                                                        onyxclub.io/r/{link.code}
+                                                    </code>
+                                                    <button
+                                                        onClick={() => copyToClipboard(`https://onyxclub.io/r/${link.code}`, link.id)}
+                                                        className="p-1.5 rounded-lg text-onyx-500 hover:text-white hover:bg-white/[0.03] transition-all"
+                                                    >
+                                                        {copied === link.id ? <Check size={14} className="text-white" /> : <Copy size={14} />}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-white font-semibold text-lg number-display">{link.commission}%</p>
+                                                <p className="text-onyx-500 text-xs">{link.clicks.toLocaleString()} cliques • {link.conversions} vendas</p>
+                                            </div>
+                                            <button
+                                                onClick={() => handleDeleteAffiliateLink(link.id)}
+                                                className="p-2.5 rounded-xl text-onyx-600 hover:text-white hover:bg-white/[0.03] opacity-0 group-hover:opacity-100 transition-all"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </div>
                     )}
@@ -515,54 +591,84 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
                                 </div>
                             </div>
 
-                            {/* API Key */}
+                            {/* API Keys */}
                             <div className="premium-card rounded-2xl p-6">
-                                <div className="flex items-center gap-3 mb-5">
-                                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                                        <Shield size={18} className="text-onyx-400" />
+                                <div className="flex items-center justify-between mb-5">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                                            <Shield size={18} className="text-onyx-400" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-white font-medium">Chaves API</h3>
+                                            <p className="text-onyx-500 text-xs">Autenticação para integrações</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h3 className="text-white font-medium">API Key</h3>
-                                        <p className="text-onyx-500 text-xs">Chave secreta para autenticação</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <code className="flex-1 premium-input rounded-xl px-4 py-3.5 text-sm text-onyx-300 font-mono">
-                                        {apiKey.slice(0, 20)}••••••••••••
-                                    </code>
                                     <button
-                                        onClick={() => copyToClipboard(apiKey, 'api')}
-                                        className="premium-btn-ghost p-3.5 rounded-xl text-onyx-400 hover:text-white"
+                                        onClick={handleGenerateApiKey}
+                                        disabled={isSaving}
+                                        className="premium-btn flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm text-black disabled:opacity-50"
                                     >
-                                        {copied === 'api' ? <Check size={16} className="text-white" /> : <Copy size={16} />}
+                                        <Key size={14} /> Nova Chave
                                     </button>
                                 </div>
+
+                                {apiKeys.length === 0 ? (
+                                    <div className="text-center py-8 border border-dashed border-white/10 rounded-xl">
+                                        <Key size={24} className="text-onyx-600 mx-auto mb-2" />
+                                        <p className="text-onyx-500 text-sm">Nenhuma chave API</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {apiKeys.map(key => (
+                                            <div key={key.id} className="flex items-center gap-3 p-3 bg-black/30 rounded-xl group">
+                                                <code className="flex-1 text-sm text-onyx-300 font-mono">
+                                                    {key.keyPrefix}••••••••••••
+                                                </code>
+                                                <span className="text-onyx-600 text-xs">
+                                                    {new Date(key.createdAt).toLocaleDateString('pt-BR')}
+                                                </span>
+                                                <button
+                                                    onClick={() => handleRevokeApiKey(key.id)}
+                                                    className="p-2 rounded-lg text-red-500/50 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"
+                                                    title="Revogar chave"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Connected Apps */}
                             <div>
-                                <h3 className="text-[11px] font-semibold text-onyx-400 uppercase tracking-wider mb-4">Aplicativos Conectados</h3>
+                                <h3 className="text-[11px] font-semibold text-onyx-400 uppercase tracking-wider mb-4">Aplicativos</h3>
                                 <div className="grid grid-cols-2 gap-4">
-                                    {[
-                                        { name: 'Stripe', icon: '💳', connected: true, desc: 'Pagamentos' },
-                                        { name: 'Hotmart', icon: '🔥', connected: false, desc: 'Vendas' },
-                                        { name: 'ActiveCampaign', icon: '📧', connected: true, desc: 'Email Marketing' },
-                                        { name: 'Zapier', icon: '⚡', connected: false, desc: 'Automações' },
-                                    ].map(app => (
-                                        <div key={app.name} className="premium-card flex items-center gap-4 p-4 rounded-2xl">
-                                            <span className="text-2xl">{app.icon}</span>
-                                            <div className="flex-1">
-                                                <p className="text-white font-medium">{app.name}</p>
-                                                <p className="text-onyx-500 text-xs">{app.desc}</p>
+                                    {['stripe', 'hotmart', 'activecampaign', 'zapier'].map(provider => {
+                                        const meta = INTEGRATION_META[provider];
+                                        const integration = integrations.find(i => i.provider === provider);
+                                        const isConnected = integration?.isConnected || false;
+
+                                        return (
+                                            <div key={provider} className="premium-card flex items-center gap-4 p-4 rounded-2xl">
+                                                <span className="text-2xl">{meta.icon}</span>
+                                                <div className="flex-1">
+                                                    <p className="text-white font-medium">{meta.name}</p>
+                                                    <p className="text-onyx-500 text-xs">{meta.desc}</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleToggleIntegration(provider, isConnected)}
+                                                    disabled={isSaving}
+                                                    className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 ${isConnected
+                                                        ? 'bg-white/5 text-white/70 border border-white/[0.06]'
+                                                        : 'premium-btn-ghost text-onyx-400 hover:text-white'
+                                                        }`}
+                                                >
+                                                    {isConnected ? 'Conectado' : 'Conectar'}
+                                                </button>
                                             </div>
-                                            <button className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${app.connected
-                                                    ? 'bg-white/5 text-white/70 border border-white/[0.06]'
-                                                    : 'premium-btn-ghost text-onyx-400 hover:text-white'
-                                                }`}>
-                                                {app.connected ? 'Conectado' : 'Conectar'}
-                                            </button>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>
@@ -594,13 +700,13 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
                                         <button
                                             onClick={() => setNotifications({ ...notifications, [item.key]: !notifications[item.key as keyof typeof notifications] })}
                                             className={`w-12 h-7 rounded-full transition-all duration-300 relative ${notifications[item.key as keyof typeof notifications]
-                                                    ? 'bg-white'
-                                                    : 'toggle-premium'
+                                                ? 'bg-white'
+                                                : 'toggle-premium'
                                                 }`}
                                         >
                                             <div className={`absolute top-1 w-5 h-5 rounded-full shadow-lg transition-all duration-300 ${notifications[item.key as keyof typeof notifications]
-                                                    ? 'left-6 bg-black'
-                                                    : 'left-1 bg-onyx-400'
+                                                ? 'left-6 bg-black'
+                                                : 'left-1 bg-onyx-400'
                                                 }`} />
                                         </button>
                                     </div>
@@ -626,13 +732,13 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
                                         <button
                                             onClick={() => setNotifications({ ...notifications, [item.key]: !notifications[item.key as keyof typeof notifications] })}
                                             className={`w-12 h-7 rounded-full transition-all duration-300 relative ${notifications[item.key as keyof typeof notifications]
-                                                    ? 'bg-white'
-                                                    : 'toggle-premium'
+                                                ? 'bg-white'
+                                                : 'toggle-premium'
                                                 }`}
                                         >
                                             <div className={`absolute top-1 w-5 h-5 rounded-full shadow-lg transition-all duration-300 ${notifications[item.key as keyof typeof notifications]
-                                                    ? 'left-6 bg-black'
-                                                    : 'left-1 bg-onyx-400'
+                                                ? 'left-6 bg-black'
+                                                : 'left-1 bg-onyx-400'
                                                 }`} />
                                         </button>
                                     </div>
@@ -640,11 +746,11 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
                             </div>
 
                             <button
-                                onClick={handleSave}
+                                onClick={handleSaveNotifications}
                                 disabled={isSaving}
                                 className="premium-btn flex items-center gap-2.5 text-black px-7 py-3.5 rounded-xl font-semibold text-sm disabled:opacity-50"
                             >
-                                <Save size={16} />
+                                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                                 Salvar Preferências
                             </button>
                         </div>
@@ -690,7 +796,7 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
                                         value={customization.customDomain}
                                         onChange={e => setCustomization({ ...customization, customDomain: e.target.value })}
                                         placeholder="meusite.com.br"
-                                        className="flex-1 premium-input rounded-xl px-4 py-3.5 text-white placeholder-onyx-600"
+                                        className="flex-1 premium-input rounded-xl px-4 py-3.5 text-white"
                                     />
                                     <button className="premium-btn-ghost px-5 py-3.5 rounded-xl text-onyx-400 hover:text-white flex items-center gap-2 font-medium text-sm">
                                         <ExternalLink size={14} /> Verificar DNS
@@ -717,11 +823,11 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId }) => {
                             </div>
 
                             <button
-                                onClick={handleSave}
+                                onClick={handleSaveCustomization}
                                 disabled={isSaving}
                                 className="premium-btn flex items-center gap-2.5 text-black px-7 py-3.5 rounded-xl font-semibold text-sm disabled:opacity-50"
                             >
-                                <Sparkles size={16} />
+                                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
                                 Salvar Personalização
                             </button>
                         </div>

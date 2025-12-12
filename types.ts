@@ -44,6 +44,16 @@ export interface Subtask {
   dueDate?: string;
 }
 
+// Playbook - Killer Feature do MVP 0
+export interface Playbook {
+  id: string;
+  title: string;
+  type: 'VIDEO' | 'DOCUMENT' | 'LINK' | 'CHECKLIST';
+  url: string;
+  duration?: string; // ex: "4min" para vídeos
+  description?: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -51,11 +61,35 @@ export interface Task {
   status: TaskStatus;
   assignee: string;
   dueDate: string;
+  // Gantt Chart fields
+  startDate?: string;      // Data de início (ISO string)
+  endDate?: string;        // Data de término (ISO string)
+  progress?: number;       // Progresso 0-100%
+  parentTaskId?: string;   // Para subtarefas/dependências
   comments: Comment[];
   labels?: TaskLabel[];
   priority?: 'LOW' | 'MEDIUM' | 'HIGH';
   checklist?: ChecklistItem[];
   subtasks?: Subtask[];
+  // Playbook-Powered Kanban - MVP 0
+  playbooks?: Playbook[];
+  xp_reward?: number; // XP ganho ao completar (default: 50)
+}
+
+// Activity Log para Channel View (Feed de Atividades)
+export type ActivityAction = 'CREATED' | 'UPDATED' | 'COMPLETED' | 'COMMENTED' | 'ASSIGNED' | 'STATUS_CHANGED';
+
+export interface ActivityLog {
+  id: string;
+  tenantId: string;
+  userId: string;
+  userName?: string;
+  userAvatar?: string;
+  taskId?: string;
+  taskTitle?: string;
+  action: ActivityAction;
+  details?: Record<string, unknown>;
+  createdAt: string;
 }
 
 export interface LessonMaterial {
@@ -209,6 +243,8 @@ export interface ActivityFeedItem {
 
 // XP rewards for different actions
 export const XP_REWARDS = {
+  TASK_COMPLETE: 50,      // Completar task
+  TASK_COMPLETE_HIGH: 100, // Completar task de alta prioridade
   LESSON_COMPLETE: 25,
   MODULE_COMPLETE: 100,
   STREAK_DAY: 10,

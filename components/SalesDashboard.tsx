@@ -119,7 +119,7 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ financialGoal, s
     ];
 
     return (
-        <div className="space-y-8 pb-16 animate-fade-in-up">
+        <div className="space-y-8 animate-fade-in-up">
             {/* Header */}
             <div className="flex justify-between items-end pb-4 border-b border-white/[0.04]">
                 <div>
@@ -347,7 +347,7 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ financialGoal, s
                                     step="0.01"
                                     value={tempSales}
                                     onChange={e => setTempSales(Number(e.target.value))}
-                                    className="w-full premium-input rounded-xl px-4 py-3 text-white focus:outline-none placeholder-onyx-600 font-mono text-lg"
+                                    className="w-full premium-input rounded-xl px-4 py-3 text-white focus:outline-none font-mono text-lg"
                                     placeholder="0.00"
                                 />
                             </div>
@@ -357,7 +357,7 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ financialGoal, s
                                     type="date"
                                     value={tempGoal.startDate}
                                     onChange={e => setTempGoal({ ...tempGoal, startDate: e.target.value })}
-                                    className="w-full premium-input rounded-xl px-4 py-3 text-white focus:outline-none placeholder-onyx-600 [color-scheme:dark]"
+                                    className="w-full premium-input rounded-xl px-4 py-3 text-white focus:outline-none [color-scheme:dark]"
                                 />
                             </div>
                             <div>
@@ -366,7 +366,7 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ financialGoal, s
                                     type="number"
                                     value={tempGoal.target}
                                     onChange={e => setTempGoal({ ...tempGoal, target: Number(e.target.value) })}
-                                    className="w-full premium-input rounded-xl px-4 py-3 text-white focus:outline-none placeholder-onyx-600 font-mono text-lg"
+                                    className="w-full premium-input rounded-xl px-4 py-3 text-white focus:outline-none font-mono text-lg"
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
@@ -376,7 +376,7 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ financialGoal, s
                                         type="number"
                                         value={tempDailyAverage}
                                         onChange={e => setTempDailyAverage(e.target.value)}
-                                        className="w-full premium-input rounded-xl px-4 py-3 text-white focus:outline-none placeholder-onyx-600"
+                                        className="w-full premium-input rounded-xl px-4 py-3 text-white focus:outline-none"
                                         placeholder="Auto"
                                     />
                                 </div>
@@ -386,7 +386,7 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ financialGoal, s
                                         type="number"
                                         value={tempProjectionDays}
                                         onChange={e => setTempProjectionDays(e.target.value)}
-                                        className="w-full premium-input rounded-xl px-4 py-3 text-white focus:outline-none placeholder-onyx-600"
+                                        className="w-full premium-input rounded-xl px-4 py-3 text-white focus:outline-none"
                                         placeholder="Auto"
                                     />
                                 </div>
@@ -420,7 +420,7 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ financialGoal, s
                                     step="0.1"
                                     value={tempPlatformFee}
                                     onChange={e => setTempPlatformFee(Number(e.target.value))}
-                                    className="w-full premium-input rounded-xl px-4 py-3 text-white focus:outline-none placeholder-onyx-600 text-lg font-mono"
+                                    className="w-full premium-input rounded-xl px-4 py-3 text-white focus:outline-none text-lg font-mono"
                                     placeholder="Ex: 5.5"
                                 />
                                 <p className="text-[10px] text-onyx-500 mt-2 font-medium">Taxa cobrada pela plataforma de pagamento</p>
@@ -447,7 +447,7 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ financialGoal, s
                                                         type="text"
                                                         value={tax.name}
                                                         onChange={e => updateCustomTax(idx, 'name', e.target.value)}
-                                                        className="w-full bg-transparent border-b border-white/[0.1] px-0 py-1 text-white text-sm focus:outline-none focus:border-white placeholder-onyx-600"
+                                                        className="w-full bg-transparent border-b border-white/[0.1] px-0 py-1 text-white text-sm focus:outline-none focus:border-white"
                                                         placeholder="Nome da taxa"
                                                     />
                                                     <div className="flex items-center gap-2">
@@ -456,7 +456,7 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ financialGoal, s
                                                             step="0.1"
                                                             value={tax.percentage}
                                                             onChange={e => updateCustomTax(idx, 'percentage', Number(e.target.value))}
-                                                            className="w-20 bg-transparent border-b border-white/[0.1] px-0 py-1 text-white text-sm focus:outline-none focus:border-white placeholder-onyx-600 font-mono"
+                                                            className="w-20 bg-transparent border-b border-white/[0.1] px-0 py-1 text-white text-sm focus:outline-none focus:border-white font-mono"
                                                             placeholder="0.0"
                                                         />
                                                         <span className="text-onyx-500 text-xs">%</span>

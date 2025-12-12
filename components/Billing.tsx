@@ -53,7 +53,7 @@ export const Billing: React.FC<BillingProps> = ({ tenantId }) => {
    if (loading) return <div className="p-8 text-center text-onyx-500">Carregando informações da assinatura...</div>;
 
    return (
-      <div className="space-y-8 pb-16 animate-fade-in-up">
+      <div className="space-y-8 animate-fade-in-up">
          {/* Header */}
          <div>
             <div className="flex items-center gap-2 mb-1">

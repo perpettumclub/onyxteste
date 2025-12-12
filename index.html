@@ -260,6 +260,31 @@
       border-radius: 12px;
     }
 
+    /* Premium Input - Fix Legibility */
+    .premium-input {
+      background: #121212;
+      border: 1px solid #27272a;
+      color: #ffffff !important;
+      /* Force white text */
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      width: 100%;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .premium-input:focus {
+      border-color: #3b82f6;
+      background: #0a0a0a;
+      box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
+    }
+
+    .premium-input::placeholder {
+      color: #a1a1aa;
+      /* Zinc 400 - Much lighter for readability */
+      opacity: 1;
+    }
+
     /* Premium Button - Legacy */
     .premium-btn {
       background: white;

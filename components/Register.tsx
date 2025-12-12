@@ -15,7 +15,7 @@ export const Register: React.FC = () => {
         setIsLoading(true);
 
         try {
-            const { error } = await supabase.auth.signUp({
+            const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
@@ -28,8 +28,20 @@ export const Register: React.FC = () => {
 
             if (error) throw error;
 
-            alert('Conta criada com sucesso! Verifique seu email ou faça login.');
-            navigate('/login');
+            // Check for pending invite
+            const pendingInvite = localStorage.getItem('pendingInvite');
+            if (pendingInvite && data.session) {
+                // User is automatically logged in, redirect to invite
+                localStorage.removeItem('pendingInvite');
+                navigate(`/invite/${pendingInvite}`);
+            } else if (pendingInvite) {
+                // User needs to confirm email first
+                alert('Conta criada! Confirme seu email e faça login para aceitar o convite.');
+                navigate('/login');
+            } else {
+                alert('Conta criada com sucesso! Verifique seu email ou faça login.');
+                navigate('/login');
+            }
         } catch (error: any) {
             alert(error.message || 'Erro ao criar conta');
         } finally {
@@ -64,7 +76,7 @@ export const Register: React.FC = () => {
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="w-full bg-black border border-onyx-800 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-onyx-700 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-all"
+                                    className="premium-input pl-12 py-3.5"
                                     placeholder="Seu nome"
                                     required
                                 />
@@ -79,7 +91,7 @@ export const Register: React.FC = () => {
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full bg-black border border-onyx-800 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-onyx-700 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-all"
+                                    className="premium-input pl-12 py-3.5"
                                     placeholder="seu@email.com"
                                     required
                                 />
@@ -94,7 +106,7 @@ export const Register: React.FC = () => {
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full bg-black border border-onyx-800 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-onyx-700 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-all"
+                                    className="premium-input pl-12 py-3.5"
                                     placeholder="••••••••"
                                     required
                                 />

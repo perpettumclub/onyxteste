@@ -1,7 +1,8 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import { ViewState, User } from '../types';
-import { LayoutDashboard, KanbanSquare, GraduationCap, Settings, Bell, Search, Hexagon, Users, CreditCard, LogOut, Banknote, ChevronDown, Plus, Menu, X, CheckCircle, AlertCircle, FileText, UserCircle, Loader2, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, KanbanSquare, GraduationCap, Settings, Bell, Search, Hexagon, Users, CreditCard, LogOut, Banknote, ChevronDown, Plus, Menu, X, CheckCircle, AlertCircle, FileText, UserCircle, Loader2, ChevronRight, UserPlus } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import { InviteModal } from './InviteModal';
 
 interface Tenant {
   id: string;
@@ -68,6 +69,9 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children, 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+
+  // Invite modal state
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
   // Keyboard shortcut for search (Cmd+K / Ctrl+K)
   useEffect(() => {
@@ -283,8 +287,8 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children, 
         {/* Logo */}
         <div className="h-20 flex items-center justify-between px-6 border-b border-flux-border">
           <button className="flex items-center gap-3 group">
-            <div className="w-8 h-8 rounded-lg bg-flux-accent-blue/10 flex items-center justify-center text-flux-accent-blue transition-colors group-hover:bg-flux-accent-blue/20">
-              <Hexagon className="w-5 h-5 fill-current" />
+            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-black transition-colors group-hover:shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+              <Hexagon className="w-5 h-5 fill-black" />
             </div>
             <div className="block flex-1 text-left">
               <h1 className="text-sm font-bold text-white leading-none tracking-tight">Onyx Club</h1>
@@ -494,7 +498,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children, 
             </div>
           </div>
 
-          <div className="flex items-center space-x-5">
+          <div className="flex items-center space-x-3">
             <button
               onClick={() => setIsSearchOpen(true)}
               className="relative hidden md:flex items-center gap-3 w-72 bg-flux-dark border border-flux-border text-sm rounded-lg py-2 pl-4 pr-4 text-flux-text-secondary hover:text-white hover:border-flux-subtle transition-all cursor-pointer group"
@@ -502,6 +506,13 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children, 
               <Search size={16} className="text-flux-text-tertiary group-hover:text-white transition-colors" />
               <span>Buscar...</span>
               <kbd className="ml-auto text-[10px] font-mono bg-white/[0.05] px-1.5 py-0.5 rounded text-flux-text-tertiary group-hover:text-flux-text-secondary">⌘K</kbd>
+            </button>
+            <button
+              onClick={() => setIsInviteModalOpen(true)}
+              className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 text-onyx-400 hover:text-white hover:bg-white/[0.05] text-xs font-medium rounded-lg transition-all"
+            >
+              <UserPlus size={12} />
+              Convidar
             </button>
             <div className="relative">
               <button
@@ -574,7 +585,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children, 
         </header>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar px-6 lg:px-10 pt-6 lg:pt-10 pb-16 relative z-0">
-          <div className="max-w-7xl mx-auto h-full animate-fade-in">
+          <div className="max-w-7xl mx-auto animate-fade-in">
             {children}
           </div>
         </div>
@@ -582,9 +593,9 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children, 
 
       {/* Search Modal */}
       {isSearchOpen && (
-        <>
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 transition-opacity duration-300" onClick={() => setIsSearchOpen(false)}></div>
-          <div className="fixed top-[20%] left-1/2 -translate-x-1/2 w-full max-w-2xl z-50 animate-scale-in">
+        <div className="fixed inset-0 lg:left-72 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity" onClick={() => setIsSearchOpen(false)}></div>
+          <div className="relative w-full max-w-2xl animate-scale-in">
             <div className="flux-panel rounded-xl shadow-2xl overflow-hidden bg-flux-black">
               {/* Search Input */}
               <div className="flex items-center gap-4 p-5 border-b border-flux-border">
@@ -663,8 +674,16 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children, 
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
+
+      {/* Invite Modal */}
+      <InviteModal
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        tenantId={selectedTenant?.id || ''}
+        tenantName={selectedTenant?.name || ''}
+      />
     </div>
   );
 };

@@ -205,7 +205,7 @@ export const MemberArea: React.FC<MemberAreaProps> = ({ modules, setModules, use
    if (view === 'GRID') {
       return (
          <>
-            <div className="animate-fade-in-up space-y-10 pb-16">
+            <div className="animate-fade-in-up space-y-10">
 
                {/* Hero Section */}
                <div className="relative w-full h-80 rounded-[2rem] overflow-hidden border border-white/[0.04] group cursor-pointer shadow-premium-lg" onClick={() => modules.length > 0 && handleModuleClick(modules[0])}>
@@ -263,7 +263,7 @@ export const MemberArea: React.FC<MemberAreaProps> = ({ modules, setModules, use
                               placeholder="Filtrar módulos..."
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
-                              className="w-full bg-white/[0.03] border border-white/[0.04] rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-white/[0.1] focus:bg-white/[0.05] transition-all placeholder-onyx-600"
+                              className="w-full bg-white/[0.03] border border-white/[0.04] rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-white/[0.1] focus:bg-white/[0.05] transition-all"
                            />
                         </div>
                      </div>
@@ -373,7 +373,7 @@ export const MemberArea: React.FC<MemberAreaProps> = ({ modules, setModules, use
                                     type="text"
                                     value={editingModule.title}
                                     onChange={e => setEditingModule({ ...editingModule, title: e.target.value })}
-                                    className="w-full premium-input rounded-xl px-4 py-3 text-white focus:outline-none placeholder-onyx-600"
+                                    className="w-full premium-input rounded-xl px-4 py-3 text-white focus:outline-none"
                                  />
                               </div>
                               <div>
@@ -381,7 +381,7 @@ export const MemberArea: React.FC<MemberAreaProps> = ({ modules, setModules, use
                                  <textarea
                                     value={editingModule.description}
                                     onChange={e => setEditingModule({ ...editingModule, description: e.target.value })}
-                                    className="w-full premium-input rounded-xl px-4 py-3 text-white focus:outline-none h-32 resize-none placeholder-onyx-600 leading-relaxed"
+                                    className="w-full premium-input rounded-xl px-4 py-3 text-white focus:outline-none h-32 resize-none leading-relaxed"
                                  />
                               </div>
                            </div>
@@ -442,7 +442,7 @@ export const MemberArea: React.FC<MemberAreaProps> = ({ modules, setModules, use
    if (!activeLesson || !activeModule) return <div className="flex items-center justify-center h-full text-onyx-500">Carregando conteúdo...</div>;
 
    return (
-      <div className="flex flex-col h-full animate-in fade-in zoom-in-95 duration-300 pb-16">
+      <div className="flex flex-col h-full animate-in fade-in zoom-in-95 duration-300">
          <button onClick={() => setView('GRID')} className="flex items-center gap-2 text-onyx-500 hover:text-white mb-6 transition-colors w-fit group">
             <div className="p-1.5 rounded-lg bg-white/[0.03] group-hover:bg-white/[0.1] transition-colors border border-white/[0.05]">
                <ChevronLeft size={16} />

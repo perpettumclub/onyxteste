@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
-import { Task, Lead, Post, Module, SalesMetrics, Transaction, TaskStatus, FinancialGoal } from '../types';
+import { Task, Lead, Post, Module, SalesMetrics, Transaction, TaskStatus, FinancialGoal, Playbook } from '../types';
 import { debugLog } from '../config/debug';
 
 export const useDashboardData = (tenantId: string | null) => {
@@ -31,25 +31,36 @@ export const useDashboardData = (tenantId: string | null) => {
             try {
                 debugLog('API', 'Fetching dashboard data for tenant:', tenantId);
 
-                // 1. Fetch Tasks
+                // 1. Fetch Tasks with Playbooks
                 const { data: tasksData, error: tasksError } = await supabase
                     .from('tasks')
                     .select(`
-            *,
-            assignee:profiles(full_name)
-          `)
+                        *,
+                        assignee:profiles(full_name),
+                        task_playbooks(*)
+                    `)
                     .eq('tenant_id', tenantId);
 
                 if (tasksError) throw tasksError;
 
-                const formattedTasks: Task[] = (tasksData || []).map(t => ({
+                const formattedTasks: Task[] = (tasksData || []).map((t: any) => ({
                     id: t.id,
                     title: t.title,
                     description: t.description,
                     status: t.status as TaskStatus,
                     assignee: t.assignee?.full_name || 'Unassigned',
                     dueDate: t.due_date,
-                    comments: [] // TODO: Fetch comments if needed
+                    priority: t.priority || 'MEDIUM',
+                    xp_reward: t.xp_reward || 50,
+                    playbooks: (t.task_playbooks || []).map((p: any): Playbook => ({
+                        id: p.id,
+                        title: p.title,
+                        type: p.type,
+                        url: p.url,
+                        duration: p.duration,
+                        description: p.description
+                    })),
+                    comments: []
                 }));
                 setTasks(formattedTasks);
 

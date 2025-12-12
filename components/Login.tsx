@@ -20,7 +20,15 @@ export const Login: React.FC = () => {
             });
 
             if (error) throw error;
-            navigate('/select-client');
+
+            // Check for pending invite
+            const pendingInvite = localStorage.getItem('pendingInvite');
+            if (pendingInvite) {
+                localStorage.removeItem('pendingInvite');
+                navigate(`/invite/${pendingInvite}`);
+            } else {
+                navigate('/select-client');
+            }
         } catch (error: any) {
             alert(error.message || 'Erro ao fazer login');
         } finally {
@@ -55,7 +63,7 @@ export const Login: React.FC = () => {
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full bg-black border border-onyx-800 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-onyx-700 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-all"
+                                    className="premium-input pl-12 py-3.5"
                                     placeholder="seu@email.com"
                                     required
                                 />
@@ -65,7 +73,7 @@ export const Login: React.FC = () => {
                         <div className="space-y-2">
                             <div className="flex justify-between items-center ml-1">
                                 <label className="text-xs font-bold text-onyx-500 uppercase tracking-wider">Senha</label>
-                                <a href="#" className="text-xs text-onyx-400 hover:text-white transition-colors">Esqueceu a senha?</a>
+                                <Link to="/forgot-password" className="text-xs text-onyx-400 hover:text-white transition-colors">Esqueceu a senha?</Link>
                             </div>
                             <div className="relative group">
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-onyx-600 group-focus-within:text-white transition-colors" size={18} />
@@ -73,7 +81,7 @@ export const Login: React.FC = () => {
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full bg-black border border-onyx-800 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-onyx-700 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-all"
+                                    className="premium-input pl-12 py-3.5"
                                     placeholder="••••••••"
                                     required
                                 />

@@ -291,11 +291,11 @@ export const ContentManager: React.FC<ContentManagerProps> = ({ isOpen, onClose,
                                     <div className="space-y-4">
                                         <div>
                                             <label className="block text-[10px] font-bold text-onyx-500 uppercase mb-2 tracking-wider">Título</label>
-                                            <input type="text" value={editModule.title || ''} onChange={e => setEditModule({ ...editModule, title: e.target.value })} className="w-full premium-input rounded-lg px-4 py-2.5 text-white focus:outline-none placeholder-onyx-600" placeholder="Ex: Módulo 1: Introdução" autoFocus />
+                                            <input type="text" value={editModule.title || ''} onChange={e => setEditModule({ ...editModule, title: e.target.value })} className="w-full premium-input rounded-lg px-4 py-2.5 text-white focus:outline-none" placeholder="Ex: Módulo 1: Introdução" autoFocus />
                                         </div>
                                         <div>
                                             <label className="block text-[10px] font-bold text-onyx-500 uppercase mb-2 tracking-wider">Descrição</label>
-                                            <textarea value={editModule.description || ''} onChange={e => setEditModule({ ...editModule, description: e.target.value })} className="w-full premium-input rounded-lg px-4 py-2.5 text-white focus:outline-none h-24 resize-none placeholder-onyx-600 leading-relaxed" placeholder="Descreva o conteúdo deste módulo..." />
+                                            <textarea value={editModule.description || ''} onChange={e => setEditModule({ ...editModule, description: e.target.value })} className="w-full premium-input rounded-lg px-4 py-2.5 text-white focus:outline-none h-24 resize-none leading-relaxed" placeholder="Descreva o conteúdo deste módulo..." />
                                         </div>
                                         <div className="flex justify-end gap-3 pt-2">
                                             <button onClick={() => { setIsCreating(false); setIsEditing(false); }} className="px-4 py-2 text-xs font-bold text-onyx-400 hover:text-white transition-colors">Cancelar</button>
@@ -348,11 +348,11 @@ export const ContentManager: React.FC<ContentManagerProps> = ({ isOpen, onClose,
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                                 <div className="col-span-2">
                                                     <label className="block text-[10px] font-bold text-onyx-500 uppercase mb-2 tracking-wider">Título</label>
-                                                    <input type="text" value={editLesson.title || ''} onChange={e => setEditLesson({ ...editLesson, title: e.target.value })} className="w-full premium-input rounded-lg px-4 py-2.5 text-white focus:outline-none placeholder-onyx-600" placeholder="Ex: Aula 1: Conceitos Básicos" autoFocus />
+                                                    <input type="text" value={editLesson.title || ''} onChange={e => setEditLesson({ ...editLesson, title: e.target.value })} className="w-full premium-input rounded-lg px-4 py-2.5 text-white focus:outline-none" placeholder="Ex: Aula 1: Conceitos Básicos" autoFocus />
                                                 </div>
                                                 <div>
                                                     <label className="block text-[10px] font-bold text-onyx-500 uppercase mb-2 tracking-wider">Duração</label>
-                                                    <input type="text" value={editLesson.duration || ''} onChange={e => setEditLesson({ ...editLesson, duration: e.target.value })} className="w-full premium-input rounded-lg px-4 py-2.5 text-white focus:outline-none placeholder-onyx-600" placeholder="10:00" />
+                                                    <input type="text" value={editLesson.duration || ''} onChange={e => setEditLesson({ ...editLesson, duration: e.target.value })} className="w-full premium-input rounded-lg px-4 py-2.5 text-white focus:outline-none" placeholder="10:00" />
                                                 </div>
                                                 <div>
                                                     <label className="block text-[10px] font-bold text-onyx-500 uppercase mb-2 tracking-wider">Tipo</label>
@@ -380,7 +380,7 @@ export const ContentManager: React.FC<ContentManagerProps> = ({ isOpen, onClose,
                                                                     setLoading(false);
                                                                 }
                                                             }}
-                                                            className="flex-1 premium-input rounded-lg px-4 py-2.5 text-white focus:outline-none placeholder-onyx-600"
+                                                            className="flex-1 premium-input rounded-lg px-4 py-2.5 text-white focus:outline-none"
                                                             placeholder="https://youtube.com/watch?v=... ou https://vimeo.com/..."
                                                         />
                                                         <button className="bg-white/[0.05] text-white px-4 rounded-lg hover:bg-white/[0.1] border border-white/[0.05]" title="Upload">

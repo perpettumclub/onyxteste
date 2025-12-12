@@ -141,7 +141,7 @@ export const LeadsList: React.FC<LeadsListProps> = ({ leads, setLeads, tenantId 
               placeholder="Buscar por nome ou empresa..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-white/[0.03] border border-white/[0.04] rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-white/[0.1] focus:bg-white/[0.05] transition-all placeholder-onyx-600"
+              className="w-full bg-white/[0.03] border border-white/[0.04] rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-white/[0.1] focus:bg-white/[0.05] transition-all"
             />
           </div>
           <button
@@ -268,7 +268,7 @@ export const LeadsList: React.FC<LeadsListProps> = ({ leads, setLeads, tenantId 
                     required
                     value={formData.name}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full premium-input rounded-xl px-4 py-3 text-sm text-white focus:outline-none placeholder-onyx-600"
+                    className="w-full premium-input rounded-xl px-4 py-3 text-sm text-white focus:outline-none"
                     placeholder="Ex: João Silva"
                   />
                 </div>
@@ -279,7 +279,7 @@ export const LeadsList: React.FC<LeadsListProps> = ({ leads, setLeads, tenantId 
                     required
                     value={formData.email}
                     onChange={e => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full premium-input rounded-xl px-4 py-3 text-sm text-white focus:outline-none placeholder-onyx-600"
+                    className="w-full premium-input rounded-xl px-4 py-3 text-sm text-white focus:outline-none"
                     placeholder="joao@empresa.com"
                   />
                 </div>
@@ -291,7 +291,7 @@ export const LeadsList: React.FC<LeadsListProps> = ({ leads, setLeads, tenantId 
                       required
                       value={formData.company}
                       onChange={e => setFormData({ ...formData, company: e.target.value })}
-                      className="w-full premium-input rounded-xl px-4 py-3 text-sm text-white focus:outline-none placeholder-onyx-600"
+                      className="w-full premium-input rounded-xl px-4 py-3 text-sm text-white focus:outline-none"
                       placeholder="Empresa Ltd"
                     />
                   </div>
@@ -302,7 +302,7 @@ export const LeadsList: React.FC<LeadsListProps> = ({ leads, setLeads, tenantId 
                       required
                       value={formData.value}
                       onChange={e => setFormData({ ...formData, value: e.target.value })}
-                      className="w-full premium-input rounded-xl px-4 py-3 text-sm text-white focus:outline-none placeholder-onyx-600"
+                      className="w-full premium-input rounded-xl px-4 py-3 text-sm text-white focus:outline-none"
                       placeholder="0.00"
                     />
                   </div>

@@ -68,10 +68,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, tasks, posts, setPos
   };
 
   return (
-    <div className="space-y-8 pb-16 animate-fade-in">
+    <div className="space-y-8 animate-fade-in-up">
 
       {/* Welcome Section */}
-      <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-6 border-b border-flux-border">
+      <div className="flex justify-between items-start h-full animate-in fade-in zoom-in-95 duration-300 border-b border-flux-border pb-6">
         <div>
           <div className="flex items-center gap-2 mb-2">
             <span className="flux-badge">Dashboard</span>
@@ -84,9 +84,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, tasks, posts, setPos
         <button
           onClick={handleGenerateSummary}
           disabled={loadingAi}
-          className="flux-btn-primary flex items-center gap-2.5 px-6 py-3 text-sm font-bold disabled:opacity-50 hover:shadow-flux-highlight transition-all"
+          className="flux-btn-primary flex items-center gap-2 px-4 py-2 text-xs font-bold disabled:opacity-50 hover:shadow-flux-highlight transition-all flex-shrink-0"
         >
-          {loadingAi ? <Loader2 className="animate-spin w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+          {loadingAi ? <Loader2 className="animate-spin w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
           {loadingAi ? 'Analisando...' : 'Gerar Daily Briefing'}
         </button>
       </div>
@@ -103,7 +103,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, tasks, posts, setPos
             </h3>
             <div className="text-flux-text-secondary leading-relaxed text-sm max-w-4xl font-medium">
               {loadingAi ? (
-                <div className="space-y-4 opacity-50">
+                <div className="animate-fade-in-up space-y-10">
                   <div className="h-2 bg-flux-border rounded-full w-3/4 animate-pulse"></div>
                   <div className="h-2 bg-flux-border rounded-full w-1/2 animate-pulse delay-75"></div>
                   <div className="h-2 bg-flux-border rounded-full w-5/6 animate-pulse delay-150"></div>

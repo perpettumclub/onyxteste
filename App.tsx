@@ -11,7 +11,10 @@ import { Settings } from './components/Settings';
 import { Affiliate } from './components/Affiliate';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
+import { ForgotPassword } from './components/ForgotPassword';
+import { ResetPassword } from './components/ResetPassword';
 import { ClientSelect } from './components/ClientSelect';
+import { InvitePage } from './components/InvitePage';
 import { Task, ViewState, Lead, Post, FinancialGoal, Module, User, SalesMetrics, Transaction } from './types';
 import { MOCK_TASKS, MOCK_MODULES, MOCK_LEADS, MOCK_POSTS, MOCK_SALES_METRICS, MOCK_TRANSACTIONS } from './constants';
 import TeleConsole from './components/TeleConsole';
@@ -139,6 +142,9 @@ const AppRoutes: React.FC = () => {
     <Routes>
       <Route path="/login" element={!session ? <Login /> : <Navigate to="/select-client" replace />} />
       <Route path="/register" element={!session ? <Register /> : <Navigate to="/select-client" replace />} />
+      <Route path="/forgot-password" element={!session ? <ForgotPassword /> : <Navigate to="/select-client" replace />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/invite/:code" element={<InvitePage />} />
       <Route
         path="/select-client"
         element={

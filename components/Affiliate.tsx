@@ -30,7 +30,7 @@ export const Affiliate: React.FC<AffiliateProps> = ({ tenantId }) => {
     };
 
     return (
-        <div className="space-y-8 pb-16 animate-fade-in-up">
+        <div className="space-y-8 animate-fade-in-up">
             {/* Header */}
             <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -106,8 +106,8 @@ export const Affiliate: React.FC<AffiliateProps> = ({ tenantId }) => {
                     <button
                         onClick={() => copyToClipboard(affiliateData.referralLink)}
                         className={`px-6 py-4 rounded-xl font-bold text-sm flex items-center gap-2 transition-all ${copied
-                                ? 'bg-green-500 text-white'
-                                : 'bg-white text-black hover:bg-onyx-200'
+                            ? 'bg-green-500 text-white'
+                            : 'bg-white text-black hover:bg-onyx-200'
                             }`}
                     >
                         {copied ? <><CheckCircle size={16} /> Copiado!</> : <><Copy size={16} /> Copiar Link</>}
@@ -161,8 +161,8 @@ export const Affiliate: React.FC<AffiliateProps> = ({ tenantId }) => {
                                     </td>
                                     <td className="py-4 px-6">
                                         <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide ${referral.status === 'active'
-                                                ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                                                : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                                            ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                                            : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
                                             }`}>
                                             {referral.status === 'active' ? 'Ativo' : 'Pendente'}
                                         </span>
