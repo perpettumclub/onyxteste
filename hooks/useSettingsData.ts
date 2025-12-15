@@ -321,12 +321,19 @@ export function useSettingsData(userId: string, tenantId: string | null): UseSet
     // Save Profile
     const saveProfile = async (): Promise<{ success: boolean; message: string }> => {
         try {
+            const updateData: any = {
+                full_name: profile.name,
+                bio: profile.bio
+            };
+
+            // Incluir avatar_url se disponível
+            if (profile.avatar) {
+                updateData.avatar_url = profile.avatar;
+            }
+
             const { error } = await supabase
                 .from('profiles')
-                .update({
-                    full_name: profile.name,
-                    bio: profile.bio
-                })
+                .update(updateData)
                 .eq('id', userId);
 
             if (error) throw error;
@@ -411,6 +418,30 @@ export function useSettingsData(userId: string, tenantId: string | null): UseSet
                 .single();
 
             if (!existingUser) {
+                // Gerar código de convite
+                const inviteCode = Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+
+                // Obter usuário atual para ser o inviter
+                const { data: { user: currentUser } } = await supabase.auth.getUser();
+                if (!currentUser) return { success: false, message: 'Usuário não autenticado' };
+
+                // Criar convite real na tabela invites
+                const { error: inviteError } = await supabase
+                    .from('invites')
+                    .insert({
+                        tenant_id: tenantId,
+                        inviter_id: currentUser.id,
+                        invite_code: inviteCode,
+                        invited_email: email,
+                        status: 'PENDING'
+                    });
+
+                if (inviteError) {
+                    console.error('Invite error:', inviteError);
+                    return { success: false, message: 'Erro ao criar convite: ' + inviteError.message };
+                }
+
+                // Adicionar membro temporário na UI
                 const tempMember: TeamMember = {
                     id: `pending-${Date.now()}`,
                     email,
@@ -419,7 +450,21 @@ export function useSettingsData(userId: string, tenantId: string | null): UseSet
                     status: 'pending'
                 };
                 setTeamMembers(prev => [...prev, tempMember]);
-                return { success: true, message: `Convite pendente para ${email}` };
+
+                const inviteLink = `${window.location.origin}/invite/${inviteCode}`;
+                return { success: true, message: `Convite criado! Link: ${inviteLink}` };
+            }
+
+            // Verificar se já é membro
+            const { data: existingMember } = await supabase
+                .from('tenant_members')
+                .select('user_id')
+                .eq('tenant_id', tenantId)
+                .eq('user_id', existingUser.id)
+                .single();
+
+            if (existingMember) {
+                return { success: false, message: 'Este usuário já é membro da equipe' };
             }
 
             const { error } = await supabase

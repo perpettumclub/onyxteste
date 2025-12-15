@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User, Mail, Lock, Users, Link2, Bell, Palette, Webhook, Copy, Check, Plus, Trash2, Send, Shield, Globe, Camera, Save, ExternalLink, ChevronRight, Sparkles, Loader2, Key, RefreshCw } from 'lucide-react';
 import { useSettingsData } from '../hooks/useSettingsData';
+import { supabase } from '../services/supabase';
 
 interface SettingsProps {
     user: {
@@ -52,6 +53,10 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId, initialTab }
 
     // Clipboard state
     const [copied, setCopied] = useState<string | null>(null);
+
+    // Avatar upload state
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const avatarInputRef = useRef<HTMLInputElement>(null);
 
     // Use the settings hook
     const {
@@ -197,6 +202,56 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId, initialTab }
         showMessage(result.message);
     };
 
+    // Avatar upload handler
+    const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validar tipo de arquivo
+        if (!file.type.startsWith('image/')) {
+            showMessage('Por favor, selecione uma imagem válida');
+            return;
+        }
+
+        // Validar tamanho (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            showMessage('A imagem deve ter no máximo 5MB');
+            return;
+        }
+
+        setUploadingAvatar(true);
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+            const filePath = `avatars/${fileName}`;
+
+            // Upload para Supabase Storage
+            const { error: uploadError } = await supabase.storage
+                .from('media')
+                .upload(filePath, file, { upsert: true });
+
+            if (uploadError) {
+                console.error('Upload error:', uploadError);
+                showMessage('Erro ao fazer upload: ' + uploadError.message);
+                return;
+            }
+
+            // Obter URL pública
+            const { data: { publicUrl } } = supabase.storage
+                .from('media')
+                .getPublicUrl(filePath);
+
+            // Atualizar estado do perfil com a nova URL
+            setProfile({ ...profile, avatar: publicUrl });
+            showMessage('Foto atualizada! Clique em "Salvar Perfil" para confirmar.');
+        } catch (error: any) {
+            console.error('Error uploading avatar:', error);
+            showMessage('Erro ao fazer upload da imagem');
+        } finally {
+            setUploadingAvatar(false);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="h-full flex items-center justify-center">
@@ -257,14 +312,27 @@ export const Settings: React.FC<SettingsProps> = ({ user, tenantId, initialTab }
                             {/* Avatar */}
                             <div className="flex items-center gap-6">
                                 <div className="relative group">
+                                    <input
+                                        type="file"
+                                        ref={avatarInputRef}
+                                        onChange={handleAvatarUpload}
+                                        accept="image/*"
+                                        className="hidden"
+                                    />
                                     <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-onyx-700 to-onyx-800 border border-white/[0.06] flex items-center justify-center text-3xl font-semibold text-white shadow-premium transition-all group-hover:shadow-premium-lg overflow-hidden">
-                                        {profile.avatar ? (
+                                        {uploadingAvatar ? (
+                                            <Loader2 className="w-8 h-8 animate-spin text-white" />
+                                        ) : profile.avatar ? (
                                             <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
                                         ) : (
                                             profile.name ? profile.name.charAt(0).toUpperCase() : 'U'
                                         )}
                                     </div>
-                                    <button className="absolute -bottom-2 -right-2 p-2.5 premium-btn rounded-xl shadow-premium-lg transition-transform hover:scale-105">
+                                    <button
+                                        onClick={() => avatarInputRef.current?.click()}
+                                        disabled={uploadingAvatar}
+                                        className="absolute -bottom-2 -right-2 p-2.5 premium-btn rounded-xl shadow-premium-lg transition-transform hover:scale-105 disabled:opacity-50"
+                                    >
                                         <Camera size={14} />
                                     </button>
                                 </div>

@@ -154,16 +154,35 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children, 
     return () => clearTimeout(timer);
   }, [searchQuery, isSearchOpen, performSearch]);
 
-  // Fetch tenants from Supabase
+  // Fetch tenants from Supabase (only those where user is a member)
   useEffect(() => {
     const fetchTenants = async () => {
-      const { data, error } = await supabase.from('tenants').select('id, name').order('name');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Buscar apenas tenants onde o usuário é membro
+      const { data, error } = await supabase
+        .from('tenant_members')
+        .select(`
+          tenant:tenants (
+            id,
+            name
+          )
+        `)
+        .eq('user_id', user.id);
+
       if (!error && data) {
-        setTenants(data);
+        const formatted = data
+          .filter((item: any) => item.tenant)
+          .map((item: any) => ({
+            id: item.tenant.id,
+            name: item.tenant.name
+          }));
+        setTenants(formatted);
         // Set initial selected tenant
-        if (data.length > 0) {
-          const current = selectedTenantId ? data.find(t => t.id === selectedTenantId) : data[0];
-          setSelectedTenant(current || data[0]);
+        if (formatted.length > 0) {
+          const current = selectedTenantId ? formatted.find(t => t.id === selectedTenantId) : formatted[0];
+          setSelectedTenant(current || formatted[0]);
         }
       }
     };
