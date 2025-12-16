@@ -1,22 +1,27 @@
 -- ============================================
--- FIX INVITES AND MEMBER AREA CREATION
+-- FIX INVITES AND MEMBER AREA CREATION (V2)
+-- Run this in Supabase SQL Editor
 -- ============================================
 
+-- DROP old functions first to ensure clean state
+drop function if exists public.get_invite_details(text);
+drop function if exists public.accept_invite(text);
+
 -- 1. Function to safely get invite details (publicly accessible via RPC)
-create or replace function public.get_invite_details(code text)
+create or replace function public.get_invite_details(invite_code_param text)
 returns jsonb
 language plpgsql
-security definer -- Runs with privileges of defining user (bypass RLS)
+security definer
+set search_path = public
 as $$
 declare
   invite_record record;
-  tenant_record record;
-  result jsonb;
+  tenant_name_val text;
 begin
   -- Find invite
   select * into invite_record
-  from public.invites
-  where invite_code = code;
+  from invites
+  where invite_code = invite_code_param;
 
   if not found then
     return jsonb_build_object('error', 'Convite não encontrado');
@@ -32,41 +37,41 @@ begin
      return jsonb_build_object('error', 'Convite já utilizado');
   end if;
 
-  -- Get tenant details
-  select name into tenant_record
-  from public.tenants
+  -- Get tenant name
+  select name into tenant_name_val
+  from tenants
   where id = invite_record.tenant_id;
 
   return jsonb_build_object(
-    'tenant_name', tenant_record.name,
+    'tenant_name', tenant_name_val,
     'tenant_id', invite_record.tenant_id,
-    'inviter_id', invite_record.inviter_id,
     'status', invite_record.status
   );
 end;
 $$;
 
 -- 2. Function to safely accept invite (authenticated user only)
-create or replace function public.accept_invite(code text)
+create or replace function public.accept_invite(invite_code_param text)
 returns jsonb
 language plpgsql
 security definer
+set search_path = public
 as $$
 declare
   invite_record record;
-  user_id uuid;
-  existing_member record;
+  current_user_id uuid;
+  existing_member_id uuid;
 begin
   -- Get current user
-  user_id := auth.uid();
-  if user_id is null then
+  current_user_id := auth.uid();
+  if current_user_id is null then
     return jsonb_build_object('success', false, 'error', 'Usuário não autenticado');
   end if;
 
   -- Find invite
   select * into invite_record
-  from public.invites
-  where invite_code = code;
+  from invites
+  where invite_code = invite_code_param;
 
   if not found then
     return jsonb_build_object('success', false, 'error', 'Convite não encontrado');
@@ -81,21 +86,21 @@ begin
   end if;
 
   -- Check if already a member
-  select * into existing_member
-  from public.tenant_members
-  where tenant_members.tenant_id = invite_record.tenant_id
-  and tenant_members.user_id = user_id;
+  select user_id into existing_member_id
+  from tenant_members
+  where tenant_id = invite_record.tenant_id
+  and user_id = current_user_id;
 
-  if found then
+  if existing_member_id is not null then
     return jsonb_build_object('success', true, 'message', 'Usuário já é membro', 'tenant_id', invite_record.tenant_id);
   end if;
 
   -- Add to tenant_members
-  insert into public.tenant_members (tenant_id, user_id, role)
-  values (invite_record.tenant_id, user_id, 'VIEWER');
+  insert into tenant_members (tenant_id, user_id, role)
+  values (invite_record.tenant_id, current_user_id, 'VIEWER');
 
   -- Update invite status
-  update public.invites
+  update invites
   set status = 'ACCEPTED',
       accepted_at = now()
   where id = invite_record.id;
@@ -104,42 +109,6 @@ begin
 end;
 $$;
 
--- 3. Policy to allow users to create tenants
--- Ensure Policy exists or Create it
-do $$
-begin
-  if not exists (
-    select 1 from pg_policies 
-    where tablename = 'tenants' 
-    and policyname = 'Users can create tenants'
-  ) then
-    create policy "Users can create tenants" on public.tenants
-      for insert with check (auth.uid() = owner_id);
-  end if;
-end
-$$;
-
--- 4. Policy for Tenant Members (Creation Flow)
-do $$
-begin
-  if not exists (
-    select 1 from pg_policies 
-    where tablename = 'tenant_members' 
-    and policyname = 'Owners can add themselves'
-  ) then
-    create policy "Owners can add themselves" on public.tenant_members
-      for insert with check (
-         auth.uid() = user_id 
-         and exists (
-           select 1 from public.tenants
-           where id = tenant_id 
-           and owner_id = auth.uid()
-         )
-      );
-  end if;
-end
-$$;
-
--- Grant execute permissions (important for RPC)
+-- Grant execute permissions
 grant execute on function public.get_invite_details(text) to anon, authenticated, service_role;
 grant execute on function public.accept_invite(text) to authenticated, service_role;

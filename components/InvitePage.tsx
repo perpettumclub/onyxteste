@@ -33,7 +33,7 @@ export const InvitePage: React.FC = () => {
 
         try {
             // Use secure RPC to accept invite
-            const { data, error } = await supabase.rpc('accept_invite', { code });
+            const { data, error } = await supabase.rpc('accept_invite', { invite_code_param: code });
 
             if (error) {
                 console.error('Error accepting invite:', error);
@@ -84,7 +84,7 @@ export const InvitePage: React.FC = () => {
 
             try {
                 // Use secure RPC to get invite details (works even if not logged in)
-                const { data, error } = await supabase.rpc('get_invite_details', { code });
+                const { data, error } = await supabase.rpc('get_invite_details', { invite_code_param: code });
 
                 if (error) {
                     console.error('Error fetching invite:', error);
