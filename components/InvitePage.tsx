@@ -26,6 +26,54 @@ export const InvitePage: React.FC = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
 
+    const handleAcceptInvite = async () => {
+        if (!invite || !session?.user) return;
+
+        setIsAccepting(true);
+
+        try {
+            // Use secure RPC to accept invite
+            const { data, error } = await supabase.rpc('accept_invite', { code });
+
+            if (error) {
+                console.error('Error accepting invite:', error);
+                // Handle specific error messages from RPC
+                if (error.message.includes('Convite já utilizado')) {
+                    setError('Este convite já foi utilizado.');
+                } else if (error.message.includes('Convite expirado')) {
+                    setError('Este convite expirou.');
+                } else {
+                    setError('Erro ao aceitar convite.');
+                }
+                setIsAccepting(false);
+                return;
+            }
+
+            // RPC returns { success: boolean, tenant_id: string, message?: string }
+            if (data && data.success) {
+                // Set selected tenant and redirect
+                localStorage.setItem('selectedClientId', data.tenant_id);
+                setSuccess(true);
+                setTimeout(() => navigate('/dashboard'), 1500);
+            } else if (data && !data.success) {
+                setError(data.error || 'Erro ao processar convite.');
+                setIsAccepting(false);
+            } else {
+                // Handle "Already member" case which might return success=true
+                if (data?.message === 'Usuário já é membro') {
+                    localStorage.setItem('selectedClientId', data.tenant_id);
+                    setSuccess(true);
+                    setTimeout(() => navigate('/dashboard'), 1500);
+                }
+            }
+
+        } catch (err) {
+            console.error('Error accepting invite:', err);
+            setError('Erro ao aceitar convite.');
+            setIsAccepting(false);
+        }
+    };
+
     useEffect(() => {
         const fetchInvite = async () => {
             if (!code) {
@@ -35,40 +83,32 @@ export const InvitePage: React.FC = () => {
             }
 
             try {
-                const { data, error: fetchError } = await supabase
-                    .from('invites')
-                    .select('*, tenant:tenants(name)')
-                    .eq('invite_code', code)
-                    .single();
+                // Use secure RPC to get invite details (works even if not logged in)
+                const { data, error } = await supabase.rpc('get_invite_details', { code });
 
-                if (fetchError || !data) {
-                    setError('Convite não encontrado ou expirado.');
+                if (error) {
+                    console.error('Error fetching invite:', error);
+                    setError('Erro ao carregar convite.');
                     setIsLoading(false);
                     return;
                 }
 
-                // Check if tenant data is available
-                if (!data.tenant) {
-                    setError('Área de membros não encontrada.');
+                if (data.error) {
+                    setError(data.error);
                     setIsLoading(false);
                     return;
                 }
 
-                // Check if expired
-                if (new Date(data.expires_at) < new Date()) {
-                    setError('Este convite expirou.');
-                    setIsLoading(false);
-                    return;
-                }
-
-                // Check if already accepted
-                if (data.status === 'ACCEPTED') {
-                    setError('Este convite já foi utilizado.');
-                    setIsLoading(false);
-                    return;
-                }
-
-                setInvite(data);
+                setInvite({
+                    id: 'rpc-data', // Placeholder
+                    tenant_id: data.tenant_id,
+                    invite_code: code,
+                    status: data.status,
+                    expires_at: new Date(Date.now() + 86400000).toISOString(), // Placeholder
+                    tenant: {
+                        name: data.tenant_name
+                    }
+                });
             } catch (err) {
                 console.error('Error fetching invite:', err);
                 setError('Erro ao carregar convite.');
@@ -79,69 +119,6 @@ export const InvitePage: React.FC = () => {
 
         fetchInvite();
     }, [code]);
-
-    // Auto-accept if user is logged in
-    useEffect(() => {
-        if (session && invite && !isAccepting && !success) {
-            handleAcceptInvite();
-        }
-    }, [session, invite]);
-
-    const handleAcceptInvite = async () => {
-        if (!invite || !session?.user) return;
-
-        setIsAccepting(true);
-
-        try {
-            // Check if user is already a member
-            const { data: existingMember } = await supabase
-                .from('tenant_members')
-                .select('tenant_id')
-                .eq('tenant_id', invite.tenant_id)
-                .eq('user_id', session.user.id)
-                .single();
-
-            if (existingMember) {
-                // Already a member, just redirect
-                localStorage.setItem('selectedClientId', invite.tenant_id);
-                setSuccess(true);
-                setTimeout(() => navigate('/dashboard'), 1500);
-                return;
-            }
-
-            // Add user as a member
-            const { error: memberError } = await supabase
-                .from('tenant_members')
-                .insert({
-                    tenant_id: invite.tenant_id,
-                    user_id: session.user.id,
-                    role: 'VIEWER'
-                });
-
-            if (memberError) {
-                console.error('Error adding member:', memberError);
-                setError('Erro ao aceitar convite. Tente novamente.');
-                setIsAccepting(false);
-                return;
-            }
-
-            // Update invite status
-            await supabase
-                .from('invites')
-                .update({ status: 'ACCEPTED', accepted_at: new Date().toISOString() })
-                .eq('id', invite.id);
-
-            // Set selected tenant and redirect
-            localStorage.setItem('selectedClientId', invite.tenant_id);
-            setSuccess(true);
-            setTimeout(() => navigate('/dashboard'), 1500);
-
-        } catch (err) {
-            console.error('Error accepting invite:', err);
-            setError('Erro ao aceitar convite.');
-            setIsAccepting(false);
-        }
-    };
 
     const handleLoginRedirect = () => {
         // Store invite code for after login

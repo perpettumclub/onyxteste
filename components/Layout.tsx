@@ -237,13 +237,48 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, setView, children, 
   const handleAddTenant = async () => {
     if (!newTenantName.trim()) return;
 
-    const { data, error } = await supabase.from('tenants').insert([{ name: newTenantName.trim() }]).select();
-    if (!error && data && data[0]) {
-      setTenants([...tenants, data[0]]);
-      setSelectedTenant(data[0]);
-      onTenantChange?.(data[0].id);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // 1. Create Tenant
+      const { data: tenant, error: tenantError } = await supabase
+        .from('tenants')
+        .insert({
+          name: newTenantName.trim(),
+          owner_id: user.id,
+          slug: newTenantName.trim().toLowerCase().replace(/\s+/g, '-') + '-' + Date.now()
+        })
+        .select()
+        .single();
+
+      if (tenantError) throw tenantError;
+
+      // 2. Add User as Member (Owner)
+      const { error: memberError } = await supabase
+        .from('tenant_members')
+        .insert({
+          tenant_id: tenant.id,
+          user_id: user.id,
+          role: 'OWNER'
+        });
+
+      if (memberError) throw memberError;
+
+      // 3. Seed initial data (optional but good for UX)
+      await supabase.from('tasks').insert([
+        { tenant_id: tenant.id, title: 'Configurar Área de Membros', status: 'TODO', due_date: new Date().toISOString() }
+      ]);
+
+      setTenants([...tenants, tenant]);
+      setSelectedTenant(tenant);
+      onTenantChange?.(tenant.id);
       setNewTenantName('');
       setIsAddingTenant(false);
+
+    } catch (error: any) {
+      console.error('Error creating tenant:', error);
+      alert('Erro ao criar área: ' + error.message);
     }
   };
 
