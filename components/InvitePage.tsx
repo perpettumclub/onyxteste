@@ -120,6 +120,13 @@ export const InvitePage: React.FC = () => {
         fetchInvite();
     }, [code]);
 
+    // Auto-accept if user is logged in
+    useEffect(() => {
+        if (session && invite && !isAccepting && !success && !error) {
+            handleAcceptInvite();
+        }
+    }, [session, invite]);
+
     const handleLoginRedirect = () => {
         // Store invite code for after login
         localStorage.setItem('pendingInvite', code || '');
